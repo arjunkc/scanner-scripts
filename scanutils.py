@@ -61,6 +61,7 @@ def files_within_timeoffset(l,match_string_time,match_string_part,timenow,timeof
         matches.sort(reverse=True) # will sort by first integer key, by default. it appears to work correctly
         # return list of most recent matches
         matches = [ x for x in matches if x[0] == matches[0][0] ]
+    # matches is a 3-tuple containing, (filetime, part number, filename)
     return matches
 
 def oddoreven_and_maxpart_number(filesclose,debug=False):

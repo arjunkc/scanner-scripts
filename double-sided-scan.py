@@ -77,6 +77,7 @@ except:
         display("\nNo close by files found\n",as_script=as_script,logfile=lfile)
 
 # find files close in creation time (specified by timeoffset) to other files in the directory
+# files close will contain a list of tuples containing (filetime, part number, filename)
 filesclose = files_within_timeoffset(files,match_string_time,match_string_part,timenow,timeoffset,debug=debug)
 if debug:
     display(files,filesclose,as_script=as_script,logfile=lfile)
@@ -119,6 +120,11 @@ elif output == 'run_even':
    oldfiles = [x[2] for x in filesclose]
    oldfiles.sort() #newfiles should be sorted already
    # interleave two lists, nested for loops
+   # new files will have to be reversed If you scan the odd pages, turn the
+   # document around, and then scan the even pages with the last even page as
+   # the first page.
+   newfiles.reverse()
+   # the new files
    allfiles = [ val for pair in zip(oldfiles,newfiles) for val in pair]
    #if debug:
        #display('filelist: ' , allfiles,as_script=as_script,logfile=lfile)
