@@ -92,7 +92,7 @@ if output == 'run_odd':
 else:
     # if no even files found within 5 minutes of each other
     #scancommand=['scanimage','-v','-v','-p','--device-name',device,'--mode',mode,'--resolution',resolution,'-x','-y',height,'--batch='+output_file,'--batch-start',str(maxpart + 1),'--batch-increment','-2']
-    run_scancommand(device,outputfile,width=width,height=height,logfile=lfile,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart=str(maxpart+1),batchincrement='2')
+    run_scancommand(device,outputfile,width=width,height=height,logfile=lfile,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart=str(maxpart+1),batchincrement='-2')
 
 # convert files to pdf
 os.system('sleep 3')
@@ -123,7 +123,7 @@ elif output == 'run_even':
    # new files will have to be reversed If you scan the odd pages, turn the
    # document around, and then scan the even pages with the last even page as
    # the first page.
-   newfiles.reverse()
+   #newfiles.reverse()
    # the new files
    allfiles = [ val for pair in zip(oldfiles,newfiles) for val in pair]
    #if debug:
