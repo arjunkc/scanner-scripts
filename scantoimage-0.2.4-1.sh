@@ -59,9 +59,9 @@ output_file=/home/arjun/brscan/photos/brscan_photo_"`date +%Y-%m-%d-%H-%M-%S`".p
 
 # options
 if [[ -z "$height" || -z "$width" ]]; then
-    SCANOPTIONS="--mode $mode --device-name $device --resolution $resolution"
+    SCANOPTIONS="--mode $mode --device-name \"$device\" --resolution $resolution"
 else
-    SCANOPTIONS="--mode $mode --device-name $device --resolution $resolution -x $width -y $height"
+    SCANOPTIONS="--mode $mode --device-name \"$device\" --resolution $resolution -x $width -y $height"
 fi
 
 # echo the command to stdout. Then write it to logfile.
