@@ -4,10 +4,24 @@
 # for each found file, determine if both even and odd completed.
 # if completed, then return odd
 # if not completed, then return even and the timestamp of the odds
-# Usage: evenorodd.py '/home/arjun/brscan' 'brscan' `date '+%s'`
-# Dec 31 2016 To do, finish the scanning and converting into a single file part.
-# Jan 11 2017 perhaps a fairly fail-safe system would be to create a compilation file with all the pdfs produces so far called odd, and one called even. Then even if you don't copy the even parts, the odd parts will be compiled. 
-# Jan 11 2017 seems to be working now
+
+# To do and notes.
+# ~~Dec 31 2016 To do, finish the scanning and converting into a single file
+# part.~~
+# ~~Jan 11 2017 perhaps a fairly fail-safe system would be to create a
+# compilation file with all the pdfs produces so far called odd, and one called
+# even. Then even if you don't copy the even parts, the odd parts will be
+# compiled.~~
+# ~~Jan 11 2017 seems to be working now~~
+# ~~Jul 16 2017 Add more functions so that it is easier to combine two sets of
+# files. filelist1 = filelist('globbing string'). filelist2 = filelist('globbing
+# string'). allfiles = interleave(filelist1,filelist2.reverse()).
+# run_pdftk(allfiles,'filename')~~
+
+# Usage: Jul 17 2017
+# double-sided-scan.py <directory> <prefix> <timenow> <device> <resolution>
+# <height> <width> <mode>
+# total of eight required arguments
 
 import os,sys,re,time,datetime,subprocess
 
@@ -18,43 +32,19 @@ part = 'part'
 timeoffset = 5*60 # in seconds
 as_script = False
 debug = True 
-logfile = '/home/arjun/brscan/brscan-skey.log'
+logfile = '/home/arjun/brscan/double-sided-scan.log'
 lfile = open(logfile,'a')
-
-if not re.match(r'/usr/bin/.*python.*',sys.argv[0]):
-    as_script = True
+waitlimit = 300 # a limit for waiting to fix errors
 
 # SCRIPT START
 # read arguments 
 # see if run as a script
-# READ ARGUMENTS
-if not as_script:
-    directory = r'/home/arjun/brscan/documents/'
-    prefix = 'brscan'
-    timenow = time.time()
-    device = 'brother4:net1;dev0'
-    resolution = '300'
-    # 11 inches is 279.40mm. 290 is about 11.4 inches to capture longer paper.
-    height = '290'
-    width = '215.88'
-    mode = 'Black & White'
-elif len(sys.argv) != 9:
-    # check number of command line options
-    display("need arguments for directory, prefix, timenow, device, resolution, height, width\n",as_script=as_script,logfile=lfile)
-    display("arguments ",sys.argv,"\n",as_script=as_script,logfile=lfile)
-    Usage(as_script)
-    # return bad exit status
-    sys.exit(1)
-else:
-    # else take options from command line
-    directory = sys.argv[1]
-    prefix = sys.argv[2]
-    timenow = int(sys.argv[3])
-    device = sys.argv[4]
-    resolution = sys.argv[5]
-    height = sys.argv[6]
-    width = sys.argv[7]
-    mode = sys.argv[8]
+if not re.match(r'/usr/bin/.*python.*',sys.argv[0]):
+    as_script = True
+
+args = sys.argv
+[directory,prefix,timenow,device,resolution,height,width,mode] \
+        = parse_arguments(as_script,args)
 
 # print parameters and arguments on debug
 if debug:
@@ -68,8 +58,7 @@ match_string_part = directory + prefix+'-[0-9]+-'+part+r'-([0-9]+)\..*'
 
 # find all files in directory
 try:
-    files = subprocess.check_output('ls ' + directory + prefix + '*-part-*.pdf',shell=True)
-    files = files.decode().split('\n')
+    files = filelist('ls ' + directory + prefix + '*-part-*.pdf')
 except:
     # ls might not find any files
     files = []
@@ -89,16 +78,20 @@ if debug:
 outputfile = directory + '/' + prefix + '-' + str(int(timenow)) + '-part-%03d.pnm'
 if output == 'run_odd':
     run_scancommand(device,outputfile,width=width,height=height,logfile=lfile,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart='1',batchincrement='2',)
-else:
+else: # output == 'run_even'if
     # if no even files found within 5 minutes of each other
-    #scancommand=['scanimage','-v','-v','-p','--device-name',device,'--mode',mode,'--resolution',resolution,'-x','-y',height,'--batch='+output_file,'--batch-start',str(maxpart + 1),'--batch-increment','-2']
+    # really these arguments to scancommand should not do type conversion for
+    # the numerican arguments. to fix.
     run_scancommand(device,outputfile,width=width,height=height,logfile=lfile,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart=str(maxpart+1),batchincrement='-2')
 
 # convert files to pdf
+# implement wait limit here. use subprocess.wait for a process to finish.
+# otherwise this thing crashes. run_scancommand should return a subprocess
+# handle so you can wait for it 
 os.system('sleep 3')
-run = subprocess.check_output('ls ' + directory + prefix + '-' + str(int(timenow)) + '-part-*.pnm',shell=True)
-# decode the string, make a list of files and a string
-number_scanned = file_part(run.decode().split('\n')[-2],match_string_part)
+run = filelist('ls ' + directory + prefix + '-' + str(int(timenow)) + '-part-*.pnm')
+# find number of files by scanning the part number of the last file.
+number_scanned = file_part(run[-1],match_string_part)
 if debug:
     display("number_scanned: " + str(number_scanned),as_script=as_script,logfile=lfile)
 
@@ -106,10 +99,7 @@ if debug:
 convert_to_pdf(directory=directory,outputtype='pdf',wait=int(number_scanned/3.0),debug=debug)
 
 # find newly converted files
-run = subprocess.check_output('ls ' + directory + prefix + '-' + str(int(timenow)) + '-part-*.pdf',shell=True)
-# decode and split into list, then remove last blank entry
-newfiles = run.decode().split('\n')[0:-1]
-newfile_string = run.decode().replace('\n',' ')
+newfiles = filelist('ls ' + directory + prefix + '-' + str(int(timenow)) + '-part-*.pdf')
 
 # make a filelist and output filename to pdftk
 if output == 'run_odd':
@@ -119,18 +109,15 @@ elif output == 'run_even':
    # if scanned even parts, and hence max part number is bigger than 1
    oldfiles = [x[2] for x in filesclose]
    oldfiles.sort() #newfiles should be sorted already
+   # new files have been ensured to be in sorted order.
    # interleave two lists, nested for loops
-   # new files will have to be reversed If you scan the odd pages, turn the
-   # document around, and then scan the even pages with the last even page as
-   # the first page.
-   #newfiles.reverse()
-   # the new files
-   allfiles = [ val for pair in zip(oldfiles,newfiles) for val in pair]
-   #if debug:
-       #display('filelist: ' , allfiles,as_script=as_script,logfile=lfile)
-   # ensures that the filename is unique
+   allfiles = interleave_lists(oldfiles,newfiles)
+   if debug:
+       display('filelist: ' , allfiles,as_script=as_script,logfile=lfile)
+   # ensures that the filename for compiled pdf is unique
    compiled_pdf_filename = directory + prefix + '-' + datetime.date.today().isoformat() + '-' + str(int(time.time())) + '.pdf'
    filestopdftk = allfiles
 
 run_pdftk(filestopdftk,compiled_pdf_filename,debug=debug,logfile=lfile)
-lfile.close() #close logfile
+#close logfile
+lfile.close() 

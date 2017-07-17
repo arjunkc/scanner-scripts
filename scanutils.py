@@ -9,7 +9,7 @@ import os,sys,re,time,datetime,subprocess
 def Usage(as_script):
     if as_script:
         sys.stdout.write("Usage:\n")
-        sys.stdout.write("\tevenorodd.py <directory name> <fileprefix=brscan> <time in seconds from epoch>\n")
+        sys.stdout.write("\t" + sys.argv[0] + "<directory name> <fileprefix=brscan> <time in seconds from epoch> <etc>\n")
         sys.stdout.flush()
 
 def display(*s,as_script=False,logfile=None):
@@ -22,6 +22,8 @@ def display(*s,as_script=False,logfile=None):
     else:
         print(*s)
 
+
+# file name handling functions
 def file_time(filename,match_string_time):
     #takes in a string representing a filename in the format
     # directory-prefix-epoch-part-number.pnm
@@ -64,6 +66,50 @@ def files_within_timeoffset(l,match_string_time,match_string_part,timenow,timeof
     # matches is a 3-tuple containing, (filetime, part number, filename)
     return matches
 
+def filelist(globbing_pattern,logfile=None):
+    if logfile==None:
+        logfile = open('/tmp/brscan.log','a')
+    # logfile implementation untested
+    run = subprocess.check_output(globbing_pattern,shell=True,stderr=logfile)
+    return run.decode().split('\n')[0:-1]
+
+def interleave_lists(l1,l2):
+    # will interleave upto the shorter of the lengths of l1 and l2
+    return [ val for pair in zip(l1,l2) for val in pair]
+
+# parsing arguments, setting default ones
+
+def parse_arguments(as_script,args):
+    if not as_script:
+        directory = r'/home/arjun/brscan/documents/'
+        prefix = 'brscan'
+        timenow = time.time()
+        device = 'brother4:net1;dev0'
+        resolution = '300'
+        # 11 inches is 279.40mm. 290 is about 11.4 inches to capture longer paper.
+        height = '290'
+        width = '215.88'
+        mode = 'Black & White'
+    elif len(args) != 9:
+        # check number of command line options
+        display("need arguments for directory, prefix, timenow, device, resolution, height, width\n",as_script=as_script,logfile=lfile)
+        display("arguments ",args,"\n",as_script=as_script,logfile=lfile)
+        Usage(as_script)
+        # return bad exit status
+        sys.exit(1)
+    else:
+        # else take options from command line
+        directory = args[1]
+        prefix = args[2]
+        timenow = int(args[3])
+        device = args[4]
+        resolution = args[5]
+        height = args[6]
+        width = args[7]
+        mode = args[8]
+    return [directory,prefix,timenow,device,resolution,height,width,mode]
+
+# odd or even part numbers
 def oddoreven_and_maxpart_number(filesclose,debug=False):
     # if some matches are found
     output = 'run_odd'
@@ -111,7 +157,6 @@ def convert_to_pdf(directory='/home/arjun/brscan/documents/',outputtype='pdf',wa
         display(out,err)
     # wait for process to return
     run.wait()
-
 
 def run_pdftk(filestopdftk,outputfile,debug=False,logfile=None):
     # files to pdftk is a list of strings
