@@ -49,6 +49,7 @@ args = sys.argv
 # print parameters and arguments on debug
 if debug:
     display(directory + ' prefix = ' + prefix + '. timenow = ' + str(timenow) + '\n',as_script=as_script,logfile=lfile)
+    # the timeoffset tells you how long to wait between odd and even scans
     display('timeoffset = ' + str(timeoffset),as_script=as_script,logfile=lfile)
     display('arguments = ', sys.argv)
 
@@ -77,7 +78,7 @@ if debug:
 # run scanner command
 outputfile = directory + '/' + prefix + '-' + str(int(timenow)) + '-part-%03d.pnm'
 if output == 'run_odd':
-    run_scancommand(device,outputfile,width=width,height=height,logfile=lfile,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart='1',batchincrement='2',)
+    run_scancommand(device,outputfile,width=width,height=height,logfile=lfile,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart='1',batchincrement='2')
 else: # output == 'run_even'if
     # if no even files found within 5 minutes of each other
     # really these arguments to scancommand should not do type conversion for
@@ -91,6 +92,7 @@ else: # output == 'run_even'if
 os.system('sleep 3')
 run = filelist('ls ' + directory + prefix + '-' + str(int(timenow)) + '-part-*.pnm')
 # find number of files by scanning the part number of the last file.
+# assumes that the list is sorted.
 number_scanned = file_part(run[-1],match_string_part)
 if debug:
     display("number_scanned: " + str(number_scanned),as_script=as_script,logfile=lfile)
