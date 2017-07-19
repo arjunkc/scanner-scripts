@@ -32,7 +32,7 @@ mkdir -p /home/arjun/brscan/documents
 
 epochnow=$(date '+%s')
 directory='/home/arjun/brscan/documents/'
-fileprefix=${directory}'scantofile'
+fileprefix='scantofile'
 /opt/brother/scanner/brscan-skey/script/single-sided-scan.py \
     ${directory} \
     ${fileprefix} \
@@ -68,16 +68,16 @@ fileprefix=${directory}'scantofile'
 #
 #fi
 
-compress_format="pdf"
-if [ -s $output_file ]; then
-    echo  $output_file is created.
-    # change ownership so arjun and szhao have access
-    chown arjun:szhao $output_file
-
-    # Should convert to jpg and delete duplicates
-    output_file_compressed=$(dirname $output_file)"/"$(basename $output_file .pnm)".$compress_format"
-    echo convert -quality 95 -density "$resolution" $output_file "$output_file_compressed" 
-    echo convert -quality 95 -density "$resolution" $output_file "$output_file_compressed" >> $logfile
-    echo convert -quality 95 -density "$resolution" "$output_file" "$output_file_compressed" | bash
-    chown arjun:szhao $output_file_compressed
-fi
+#compress_format="pdf"
+#if [ -s $output_file ]; then
+    #echo  $output_file is created.
+    ## change ownership so arjun and szhao have access
+    #chown arjun:szhao $output_file
+#
+    ## Should convert to jpg and delete duplicates
+    #output_file_compressed=$(dirname $output_file)"/"$(basename $output_file .pnm)".$compress_format"
+    #echo convert -quality 95 -density "$resolution" $output_file "$output_file_compressed" 
+    #echo convert -quality 95 -density "$resolution" $output_file "$output_file_compressed" >> $logfile
+    #echo convert -quality 95 -density "$resolution" "$output_file" "$output_file_compressed" | bash
+    #chown arjun:szhao $output_file_compressed
+#fi

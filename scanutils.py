@@ -12,16 +12,12 @@ def Usage(as_script):
         sys.stdout.write("\t" + sys.argv[0] + "<directory name> <fileprefix=brscan> <time in seconds from epoch> <etc>\n")
         sys.stdout.flush()
 
-def display(*s,as_script=False,logfile=None):
+def display(*s,logfile=None):
     # display string with the correct function.
-    if as_script:
-        if logfile==None:
-            logfile=open('/tmp/brscan.log','a')
-        print(*s,file=logfile)
-        logfile.flush()
-    else:
-        print(*s)
-
+    if logfile==None:
+        logfile=open('/tmp/brscan.log','a')
+    print(*s,file=logfile)
+    logfile.flush()
 
 # file name handling functions
 def file_time(filename,match_string_time):
@@ -92,8 +88,8 @@ def parse_arguments(as_script,args):
         mode = 'Black & White'
     elif len(args) != 9:
         # check number of command line options
-        display("need arguments for directory, prefix, timenow, device, resolution, height, width\n",as_script=as_script,logfile=lfile)
-        display("arguments ",args,"\n",as_script=as_script,logfile=lfile)
+        display("need arguments for directory, prefix, timenow, device, resolution, height, width\n",logfile=lfile)
+        display("arguments ",args,"\n",logfile=lfile)
         Usage(as_script)
         # return bad exit status
         sys.exit(1)
@@ -128,47 +124,53 @@ def oddoreven_and_maxpart_number(filesclose,debug=False):
     return (output,maxpart)
 
 def run_scancommand(device,outputfile,width='215.88',height='279.4',mode='Black & White',resolution='300',batch=False,batchstart='1',batchincrement='1',debug=False,logfile=None):
+    print("Running scanimage")
     if batch:
         scancommand=['scanimage','-v','-v','-p','--device-name',device,'--mode',mode,'--resolution',resolution,'-x',width,'-y',height,'--batch='+outputfile,'--batch-start',batchstart,'--batch-increment',batchincrement]
-        run = subprocess.Popen(scancommand)
+        run = subprocess.Popen(scancommand,stdout=logfile,stderr=logfile)
     else:
         scancommand=['scanimage','-v','-v','-p','--device-name',device,'--mode',mode,'--resolution',resolution,'-x',width,'-y',height]
         try:
             outfile_handle = open(outputfile,'w')
         except:
             display("Error opening outputfile",logfile=logfile)
-        # when run this way, the outfile_handle contains the part- something. Can't be helped.
-        run = subprocess.Popen(scancommand,stdout=outfile_handle)
+        # when run without --batch, scanimage writes image date directly to
+        # stdout. So we have to capture the stdout of a scancommand directly in
+        # the outputfile handle
+        run = subprocess.Popen(scancommand,stdout=outfile_handle,stderr=logfile)
     if debug:
         if logfile == None:
             logfile = open('/tmp/brscan.log','a')
         display('scancommand: ', scancommand,logfile=logfile)
     out,err = run.communicate()
-    return out,err
+    return out,err,run
 
-def convert_to_pdf(directory='/home/arjun/brscan/documents/',outputtype='pdf',wait=10,debug=False):
+def convert_to_pdf(directory='/home/arjun/brscan/documents/',outputtype='pdf',wait=10,debug=False,logfile=None):
+    print("Converting raw scanned files to " + outputtype)
     os.system('sleep ' + str(wait))
     os.system('chown arjun:szhao ' + directory + '/*')
     cmd = ['/home/arjun/bin/misc_scripts/convert-compress-delete','-t',"pdf",'-d',directory,'-y']
-    run = subprocess.Popen(cmd)
+    run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
     if debug:
         out,err = run.communicate()
-        display("conversion command: ", cmd)
-        display(out,err)
+        display("conversion command: ", cmd,logfile=logfile)
+        display(out,err,logfile=logfile)
     # wait for process to return
     run.wait()
 
 def run_pdftk(filestopdftk,outputfile,debug=False,logfile=None):
+    print("Compiling pdf file using pdftk")
     # files to pdftk is a list of strings
     if logfile==None:
         logfile = open('/tmp/brscan.log','a')
     pdftkcommand = ['pdftk'] + filestopdftk + ['cat','output',outputfile]
     if debug:
-       print("output filename: ", outputfile)
+       display("output filename: ", outputfile,logfile=logfile)
     display("\npdftkcommand: " , pdftkcommand,logfile=logfile)
-    run = subprocess.Popen(pdftkcommand)
+    run = subprocess.Popen(pdftkcommand,stdout=logfile,stderr=logfile)
     out,err = run.communicate()
     display("pdftkcommand errors: " ,err,logfile=logfile)
+
 
 
  

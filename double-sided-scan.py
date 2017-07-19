@@ -33,12 +33,15 @@ timeoffset = 5*60 # in seconds
 as_script = False
 debug = True 
 logfile = '/home/arjun/brscan/double-sided-scan.log'
-lfile = open(logfile,'a')
+logfile_handle = open(logfile,'a')
 waitlimit = 300 # a limit for waiting to fix errors
+today = datetime.date.today().isoformat() 
 
 # SCRIPT START
 # read arguments 
 # see if run as a script
+print("\n",today," Starting script at ", time.time())
+
 if not re.match(r'/usr/bin/.*python.*',sys.argv[0]):
     as_script = True
 
@@ -48,9 +51,9 @@ args = sys.argv
 
 # print parameters and arguments on debug
 if debug:
-    display(directory + ' prefix = ' + prefix + '. timenow = ' + str(timenow) + '\n',as_script=as_script,logfile=lfile)
+    display(directory + ' prefix = ' + prefix + '. timenow = ' + str(timenow) + '\n',logfile=logfile_handle)
     # the timeoffset tells you how long to wait between odd and even scans
-    display('timeoffset = ' + str(timeoffset),as_script=as_script,logfile=lfile)
+    display('timeoffset = ' + str(timeoffset),logfile=logfile_handle)
     display('arguments = ', sys.argv)
 
 # set filename matchstring regular expressions
@@ -64,13 +67,13 @@ except:
     # ls might not find any files
     files = []
     if debug:
-        display("\nNo close by files found\n",as_script=as_script,logfile=lfile)
+        display("\nNo close by files found\n",logfile=logfile_handle)
 
 # find files close in creation time (specified by timeoffset) to other files in the directory
 # files close will contain a list of tuples containing (filetime, part number, filename)
 filesclose = files_within_timeoffset(files,match_string_time,match_string_part,timenow,timeoffset,debug=debug)
 if debug:
-    display(files,filesclose,as_script=as_script,logfile=lfile)
+    display(files,filesclose,logfile=logfile_handle)
 
 # determine whether to run odd or even; if even, also find the  max part number of the file. 
 (output,maxpart) = oddoreven_and_maxpart_number(filesclose,debug=debug)
@@ -78,12 +81,12 @@ if debug:
 # run scanner command
 outputfile = directory + '/' + prefix + '-' + str(int(timenow)) + '-part-%03d.pnm'
 if output == 'run_odd':
-    run_scancommand(device,outputfile,width=width,height=height,logfile=lfile,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart='1',batchincrement='2')
+    [out,err,processhandle] = run_scancommand(device,outputfile,width=width,height=height,logfile=logfile_handle,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart='1',batchincrement='2')
 else: # output == 'run_even'if
     # if no even files found within 5 minutes of each other
     # really these arguments to scancommand should not do type conversion for
     # the numerican arguments. to fix.
-    run_scancommand(device,outputfile,width=width,height=height,logfile=lfile,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart=str(maxpart+1),batchincrement='-2')
+    [out,err,processhandle] = run_scancommand(device,outputfile,width=width,height=height,logfile=logfile_handle,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart=str(maxpart+1),batchincrement='-2')
 
 # convert files to pdf
 # implement wait limit here. use subprocess.wait for a process to finish.
@@ -95,17 +98,17 @@ run = filelist('ls ' + directory + prefix + '-' + str(int(timenow)) + '-part-*.p
 # assumes that the list is sorted.
 number_scanned = file_part(run[-1],match_string_part)
 if debug:
-    display("number_scanned: " + str(number_scanned),as_script=as_script,logfile=lfile)
+    display("number_scanned: " + str(number_scanned),logfile=logfile_handle)
 
 # wait for a time proportional to the number scanned
-convert_to_pdf(directory=directory,outputtype='pdf',wait=int(number_scanned/3.0),debug=debug)
+convert_to_pdf(directory=directory,outputtype='pdf',wait=int(number_scanned/3.0),debug=debug,logfile=logfile_handle)
 
 # find newly converted files
 newfiles = filelist('ls ' + directory + prefix + '-' + str(int(timenow)) + '-part-*.pdf')
 
 # make a filelist and output filename to pdftk
 if output == 'run_odd':
-    compiled_pdf_filename = directory + prefix + '-' + datetime.date.today().isoformat() + '-' + str(int(time.time())) + '-odd.pdf'
+    compiled_pdf_filename = directory + prefix + '-' + today + '-' + str(int(time.time())) + '-odd.pdf'
     filestopdftk = newfiles
 elif output == 'run_even':
    # if scanned even parts, and hence max part number is bigger than 1
@@ -115,11 +118,11 @@ elif output == 'run_even':
    # interleave two lists, nested for loops
    allfiles = interleave_lists(oldfiles,newfiles)
    if debug:
-       display('filelist: ' , allfiles,as_script=as_script,logfile=lfile)
+       display('filelist: ' , allfiles,logfile=logfile_handle)
    # ensures that the filename for compiled pdf is unique
-   compiled_pdf_filename = directory + prefix + '-' + datetime.date.today().isoformat() + '-' + str(int(time.time())) + '.pdf'
+   compiled_pdf_filename = directory + prefix + '-' + today + '-' + str(int(time.time())) + '.pdf'
    filestopdftk = allfiles
 
-run_pdftk(filestopdftk,compiled_pdf_filename,debug=debug,logfile=lfile)
+run_pdftk(filestopdftk,compiled_pdf_filename,debug=debug,logfile=logfile_handle)
 #close logfile
-lfile.close() 
+logfile_handle.close() 
