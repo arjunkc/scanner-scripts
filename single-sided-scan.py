@@ -8,6 +8,7 @@ from scanutils import *
 
 # SETTINGS
 part = 'part'
+ownedby = 'arjun:szhao'
 as_script = False
 debug = True 
 logfile = '/home/arjun/brscan/single-sided-scan.log'
@@ -67,5 +68,6 @@ compiled_pdf_filename = directory + prefix + '-' + today + '-' + str(int(time.ti
 
 run_pdftk(convertedfiles,compiled_pdf_filename,debug=debug,logfile=lfile)
 
-
+# make the files owned by a certain somebody
+run_chown(ownedby,compiled_pdf_filename,debug=debug,logfile=lfile)
 

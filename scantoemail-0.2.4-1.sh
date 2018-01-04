@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 set +o noclobber
 #
 #   $1 = scanner device

@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 set +o noclobber
 #
 #   Edited by Arjun Krishnan Apr 03 2017

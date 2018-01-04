@@ -29,6 +29,7 @@ from scanutils import *
 
 # SETTINGS
 part = 'part'
+ownedby = 'arjun:szhao'
 timeoffset = 5*60 # in seconds
 as_script = False
 debug = True 
@@ -126,3 +127,7 @@ elif output == 'run_even':
 run_pdftk(filestopdftk,compiled_pdf_filename,debug=debug,logfile=logfile_handle)
 #close logfile
 logfile_handle.close() 
+
+# make the files owned by certain somebody
+if not ownedby:
+    subprocess.Popen(['chown',ownedby,compiled_pdf_filename])

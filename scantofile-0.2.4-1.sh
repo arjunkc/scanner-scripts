@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 set +o noclobber
 #
 #   Edited by Arjun Krishnan Apr 03 2017
@@ -44,40 +44,3 @@ fileprefix='scantofile'
     "$mode" \
     >> $logfile 2>&1 
 
-#SCANOPTIONS="-v -v --device-name \"$device\" --mode 'Black & White' --resolution $resolution -y $height"
-# -p means show progress, double -v -v makes it more verbose (the man page says it may be specified repeatedly).
-# mode Gray appears to make things worse at this resolution. I have not tried True Gray.
-# The scanoptions have to be escaped in some strange way like this so that everything is passed correctly to bash.
-
-# echo the command to stdout. Then write it to logfile.
-#echo "scanimage $SCANOPTIONS > $output_file"
-#echo "scanimage $SCANOPTIONS > $output_file" >> $logfile 
-#echo "scanimage $SCANOPTIONS > $output_file" 2>> $logfile | bash
-
-#scanimage --verbose $SCANOPTIONS > $output_file 2>/dev/null
-
-# if the file is zero size, run again.
-#if [ ! -s $output_file ];then
-  #if [ "`which usleep  2>/dev/null `" != '' ];then
-    #usleep 1000000
-  #else
-    #sleep  1
-  #fi
-  #echo "Rerunning scanimage $SCANOPTIONS"
-  #scanimage $SCANOPTIONS > $output_file 2>/dev/null
-#
-#fi
-
-#compress_format="pdf"
-#if [ -s $output_file ]; then
-    #echo  $output_file is created.
-    ## change ownership so arjun and szhao have access
-    #chown arjun:szhao $output_file
-#
-    ## Should convert to jpg and delete duplicates
-    #output_file_compressed=$(dirname $output_file)"/"$(basename $output_file .pnm)".$compress_format"
-    #echo convert -quality 95 -density "$resolution" $output_file "$output_file_compressed" 
-    #echo convert -quality 95 -density "$resolution" $output_file "$output_file_compressed" >> $logfile
-    #echo convert -quality 95 -density "$resolution" "$output_file" "$output_file_compressed" | bash
-    #chown arjun:szhao $output_file_compressed
-#fi

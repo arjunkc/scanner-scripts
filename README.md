@@ -33,3 +33,7 @@ allow me to do the following
 1.  `scantoemail.sh`. This is the standard Brother scanner utility. I think I
     will turn this into a single sided scanning script from the ADF eventually.
 
+# TODO
+
+1.	Have to fix single-sided-scan.py so that it accounts for permissions properly. 
+

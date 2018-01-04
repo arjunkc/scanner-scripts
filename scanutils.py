@@ -171,6 +171,21 @@ def run_pdftk(filestopdftk,outputfile,debug=False,logfile=None):
     out,err = run.communicate()
     display("pdftkcommand errors: " ,err,logfile=logfile)
 
+def run_chown(ownedby,outputfile,debug=False,logfile=None):
+    if logfile==None:
+        logfile = open('/tmp/brscan.log','a')
+    if ownedby:
+        run = subprocess.Popen(['chown',ownedby,outputfile])
+        out,err = run.communicate()
+        if debug:
+            display("chown output,errors",out,err,logfile=logfile)
+        else:
+            display("ran chown",logfile=logfile)
+    else:
+        display("ownedby variable not set. not running chown.",logfile=logfile)
+        
+
+
 
 
  

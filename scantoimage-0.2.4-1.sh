@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 set +o noclobber
 #
 #   $1 = scanner device
@@ -40,7 +40,7 @@ mode='"24Bit Color"'
 
 logfile="/home/arjun/brscan/brscan-skey.log"
 if [ -z "$1" ]; then
-    device='"brother4:net1;dev0"'
+    device='brother4:net1;dev0'
 else
     device=$1
 fi
