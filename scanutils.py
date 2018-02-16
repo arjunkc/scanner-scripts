@@ -148,8 +148,8 @@ def run_scancommand(device,outputfile,width='215.88',height='279.4',mode='Black 
 def convert_to_pdf(directory='/home/arjun/brscan/documents/',outputtype='pdf',wait=10,debug=False,logfile=None):
     print("Converting raw scanned files to " + outputtype)
     os.system('sleep ' + str(wait))
-    os.system('chown arjun:szhao ' + directory + '/*')
     cmd = ['/home/arjun/bin/misc_scripts/convert-compress-delete','-t',"pdf",'-d',directory,'-y']
+    os.system('chown arjun:szhao ' + directory + '*')
     run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
     if debug:
         out,err = run.communicate()

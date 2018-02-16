@@ -35,5 +35,6 @@ allow me to do the following
 
 # TODO
 
+1.	Have to allow a directory argument to `run_chown`. Currently its being called by `convert_to_pdf` as well.
 1.	Have to fix single-sided-scan.py so that it accounts for permissions properly. 
 
