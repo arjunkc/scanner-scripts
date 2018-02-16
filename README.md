@@ -4,6 +4,12 @@ Contains my scanning scripts for my Brother DCP-L2450DW scanner. It has an ADF
 and a Flatbed, but the ADF does not support duplex scanning. My scan scripts
 allow me to do the following
 
+1.  `brscan-skey-0.2.4-0.cfg` This has to be copied to this precise directory:
+    
+    /opt/brother/scanner/brscan-skey/
+
+    It tells the brscan-skey utility to call bash instead of sh. sh throws errors, and I don't really care enough to debug it.
+
 1.  `scantofile.sh` A simple scanning utility. They're based on the scripts
     distributed by Brother and are called by the brscan-skey utility when it
     detects the scan button being pressed on the scanner. It scans a file,
