@@ -12,10 +12,8 @@ set +o noclobber
 #   Will scan from the 'brother4:net1;dev0' scanner by default.
 #   To do:
 
-
-
 resolution=300
-logfile="/home/arjun/brscan/brscan-skey.log"
+
 if [ -z "$1" ]; then
     device='brother4:net1;dev0'
 else
@@ -28,13 +26,31 @@ width=215.88
 height=279.4
 mode="Black & White"
 
-mkdir -p /home/arjun/brscan/documents
-
 epochnow=$(date '+%s')
-directory='/home/arjun/brscan/documents/'
+
+# ugly hack that makes environment variables set available
+source /opt/brother/scanner/brscan-skey/brscan-skey-*.cfg
+
+if [[ -z "$SAVETO" ]];  then
+    SAVETO=${HOME}'/brscan/documents'
+else
+    SAVETO=${SAVETO}'/documents/'
+fi
+mkdir -p $SAVETO
+
+scriptname=$(basename "$0")
+if [[ -z $LOGDIR ]]; then
+    # $0 refers to the script name
+    logfile=${HOME}"/brscan/$scriptname.log"
+else
+    logfile=${LOGDIR}"/$scriptname.log"
+fi
+mkdir -p $LOGDIR
+touch ${logfile}
+
 fileprefix='scantofile'
 /opt/brother/scanner/brscan-skey/script/single-sided-scan.py \
-    ${directory} \
+    ${SAVETO} \
     ${fileprefix} \
     ${epochnow} \
     ${device} \

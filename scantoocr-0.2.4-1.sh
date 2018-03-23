@@ -15,12 +15,36 @@ set +o noclobber
 #   ~~Dec 31 2016 to do, combine even and odd files into one big pdf file~~
 
 resolution=300
-logfile="/home/arjun/brscan/brscan-skey.log"
 if [ -z "$1" ]; then
     device='brother4:net1;dev0'
 else
     device=$1
 fi
+
+# ugly hack that makes environment variables set available
+source /opt/brother/scanner/brscan-skey/brscan-skey-*.cfg
+
+# SAVETO DIRECTORY
+if [[ -z $SAVETO ]];  then
+    SAVETO=$HOME'/brscan/documents/'
+else
+    SAVETO=${SAVETO}'/brscan/documents/'
+fi
+
+mkdir -p $SAVETO
+
+# LOGFILE
+scriptname=$(basename "$0")
+if [[ -z $LOGDIR ]]; then
+    # $0 refers to the script name
+    logfile=${HOME}"/brscan/$scriptname.log"
+else
+    logfile=${LOGDIR}"/$scriptname.log"
+fi
+mkdir -p $LOGDIR
+touch ${logfile}
+
+fileprefix='scantoocr'
 
 # the width is default and i wont use it. It's in mm and equal to 8.5in
 width=215.88
@@ -28,7 +52,6 @@ width=215.88
 height=279.4
 mode="Black & White"
 
-mkdir -p /home/arjun/brscan/documents
 # makes output files that look like part-01.pnm and so on. Increase the %02d if
 # you have more than 99 documents. In any case, the adf doesn't like to read
 # more than 100 documents.
@@ -38,11 +61,8 @@ mkdir -p /home/arjun/brscan/documents
 #min=$(date '+%rM')
 #easier to use epoch now
 epochnow=$(date '+%s')
-directory='/home/arjun/brscan/documents/'
-fileprefix='scantoocr'
-#/opt/brother/scanner/brscan-skey/script/double-sided-scan.py ${directory} ${fileprefix} $epochnow $device $resolution $height $width "$mode" >> $logfile 2>&1
 /opt/brother/scanner/brscan-skey/script/double-sided-scan.py \
-    ${directory} \
+    ${SAVETO} \
     ${fileprefix} \
     ${epochnow} \
     ${device} \

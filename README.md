@@ -41,6 +41,19 @@ allow me to do the following
 
 # TODO
 
+1.      Have to fix the logfile inside single-sided-scan.py. Currently it writes to a fixed /home/arjun directory. I should make this write to $HOME or something.
 1.	Have to allow a directory argument to `run_chown`. Currently its being called by `convert_to_pdf` as well.
 1.	Have to fix single-sided-scan.py so that it accounts for permissions properly. 
 
+# Notes
+
+Mar 23 2018 Has a hack that allows you to set the directory you're scanning the files to. This is implemented by adding two new environment variables in 
+
+    /opt/brother/scanner/brscan-skey/brscan-skey-0.2.4-0.cfg
+
+called
+
+    SAVETO
+    LOGDIR
+
+SAVETO sets the directory that the scanner saves files to. LOGDIR stores logs in that directory.
