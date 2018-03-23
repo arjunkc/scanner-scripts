@@ -26,7 +26,7 @@ if not re.match(r'/usr/bin/.*python.*',sys.argv[0]):
     as_script = True
 
 args = sys.argv
-[directory,prefix,timenow,device,resolution,height,width,mode] \
+[directory,prefix,timenow,device,resolution,height,width,mode,docsource] \
         = parse_arguments(as_script,args)
 
 # print parameters and arguments on debug
@@ -42,7 +42,7 @@ match_string_part = directory + prefix+'-[0-9]+-'+part+r'-([0-9]+)\..*'
 outputfile = directory + '/' + prefix + '-' + str(int(timenow)) + '-part-%03d.pnm'
 
 # run scan command
-[out,err,processhandle] = run_scancommand(device,outputfile,width=width,height=height,logfile=lfile,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart='1',batchincrement='1')
+[out,err,processhandle] = run_scancommand(device,outputfile,width=width,height=height,logfile=lfile,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart='1',batchincrement='1',docsource=docsource)
 
 os.system('sleep 3')
 try:
@@ -52,22 +52,26 @@ except:
 
 # find number of files by scanning the part number of the last file.
 # assumes that the list is sorted.
-number_scanned = file_part(files[-1],match_string_part)
+if len(files) > 0:
+    number_scanned = file_part(files[-1],match_string_part)
+else:
+    number_scanned = 0
 
 if debug:
     display("number_scanned: " + str(number_scanned),logfile=lfile)
 
-# wait for a time proportional to the number scanned
-convert_to_pdf(directory=directory,outputtype='pdf',wait=int(number_scanned/3.0),debug=debug,logfile=lfile)
+if number_scanned > 0:
+    # wait for a time proportional to the number scanned
+    convert_to_pdf(directory=directory,outputtype='pdf',wait=int(number_scanned/3.0),debug=debug,logfile=lfile)
 
-# find newly converted files
-convertedfiles = filelist('ls ' + directory + prefix + '-' + str(int(timenow)) + '-part-*.pdf')
+    # find newly converted files
+    convertedfiles = filelist('ls ' + directory + prefix + '-' + str(int(timenow)) + '-part-*.pdf')
 
-# make a filelist and output filename to pdftk
-compiled_pdf_filename = directory + prefix + '-' + today + '-' + str(int(time.time())) + '.pdf'
+    # make a filelist and output filename to pdftk
+    compiled_pdf_filename = directory + prefix + '-' + today + '-' + str(int(time.time())) + '.pdf'
 
-run_pdftk(convertedfiles,compiled_pdf_filename,debug=debug,logfile=lfile)
+    run_pdftk(convertedfiles,compiled_pdf_filename,debug=debug,logfile=lfile)
 
-# make the files owned by a certain somebody
-run_chown(ownedby,compiled_pdf_filename,debug=debug,logfile=lfile)
+    # make the files owned by a certain somebody
+    run_chown(ownedby,compiled_pdf_filename,debug=debug,logfile=lfile)
 

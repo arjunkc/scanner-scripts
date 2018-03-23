@@ -7,28 +7,39 @@ set +o noclobber
 #
 #   
 #       100,200,300,400,600
-
+#
 #   This is my batch scan. It scans by default to double sided pages.
+#   query device with scanimage -h to get allowed resolutions
 #   Will scan from the 'brother4:net1;dev0' scanner by default.
 #   To do:
 #   ~~Apr 01 2016 To do, implement compression if possible.~~
 #   ~~Dec 31 2016 to do, combine even and odd files into one big pdf file~~
 
 resolution=300
+
 if [ -z "$1" ]; then
-    device='brother4:net1;dev0'
+    device='brother4:bus3;dev7'
 else
     device=$1
 fi
+
+# the width is default and i wont use it. It's in mm and equal to 8.5in
+width=215.88
+# the height has to be set. its now 11in = 279.4 and 11.4in = 290. Setting the height higher does not work on the ADF, but does work on the flatbet
+height=279.4
+mode="Black & White"
+docsource="Automatic Document Feeder(left aligned,Duplex)"
+
+epochnow=$(date '+%s')
 
 # ugly hack that makes environment variables set available
 source /opt/brother/scanner/brscan-skey/brscan-skey-*.cfg
 
 # SAVETO DIRECTORY
-if [[ -z $SAVETO ]];  then
-    SAVETO=$HOME'/brscan/documents/'
+if [[ -z "$SAVETO" ]];  then
+    SAVETO=${HOME}'/brscan/documents'
 else
-    SAVETO=${SAVETO}'/brscan/documents/'
+    SAVETO=${SAVETO}'/documents/'
 fi
 
 mkdir -p $SAVETO
@@ -45,22 +56,6 @@ mkdir -p $LOGDIR
 touch ${logfile}
 
 fileprefix='scantoocr'
-
-# the width is default and i wont use it. It's in mm and equal to 8.5in
-width=215.88
-# the height has to be set. its now 11in = 279.4 and 11.4in = 290. Setting the height higher does not work on the ADF, but does work on the flatbet
-height=279.4
-mode="Black & White"
-
-# makes output files that look like part-01.pnm and so on. Increase the %02d if
-# you have more than 99 documents. In any case, the adf doesn't like to read
-# more than 100 documents.
-
-#date=$(date '+%F')
-#hour=$(date '+%H')
-#min=$(date '+%rM')
-#easier to use epoch now
-epochnow=$(date '+%s')
 /opt/brother/scanner/brscan-skey/script/double-sided-scan.py \
     ${SAVETO} \
     ${fileprefix} \
@@ -70,5 +65,6 @@ epochnow=$(date '+%s')
     $height \
     $width \
     "$mode" \
+    "$docsource" \
     >> $logfile 2>&1 
 

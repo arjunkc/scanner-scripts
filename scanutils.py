@@ -86,9 +86,10 @@ def parse_arguments(as_script,args):
         height = '290'
         width = '215.88'
         mode = 'Black & White'
-    elif len(args) != 9:
+        docsource = ''
+    elif len(args) != 10:
         # check number of command line options
-        display("need arguments for directory, prefix, timenow, device, resolution, height, width\n",logfile=lfile)
+        display("need arguments for directory, prefix, timenow, device, resolution, height, width, mode, docsource\n",logfile=lfile)
         display("arguments ",args,"\n",logfile=lfile)
         Usage(as_script)
         # return bad exit status
@@ -103,7 +104,8 @@ def parse_arguments(as_script,args):
         height = args[6]
         width = args[7]
         mode = args[8]
-    return [directory,prefix,timenow,device,resolution,height,width,mode]
+        docsource = args[9]
+    return [directory,prefix,timenow,device,resolution,height,width,mode,docsource]
 
 # odd or even part numbers
 def oddoreven_and_maxpart_number(filesclose,debug=False):
@@ -123,12 +125,16 @@ def oddoreven_and_maxpart_number(filesclose,debug=False):
         display(output,"maximum part number = ",maxpart+1)
     return (output,maxpart)
 
-def run_scancommand(device,outputfile,width='215.88',height='279.4',mode='Black & White',resolution='300',batch=False,batchstart='1',batchincrement='1',debug=False,logfile=None):
+def run_scancommand(device,outputfile,width='215.88',height='279.4',mode='Black & White',resolution='300',batch=False,batchstart='1',batchincrement='1',docsource='',debug=False,logfile=None):
     print("Running scanimage")
     if batch:
-        scancommand=['scanimage','-v','-v','-p','--device-name',device,'--mode',mode,'--resolution',resolution,'-x',width,'-y',height,'--batch='+outputfile,'--batch-start',batchstart,'--batch-increment',batchincrement]
+        if docsource != '':
+            scancommand=['scanimage','-v','-v','-p','--device-name',device,'--mode',mode,'--resolution',resolution,'-x',width,'-y',height,'--batch='+outputfile,'--batch-start',batchstart,'--batch-increment',batchincrement,'--source',docsource]
+        else:
+            scancommand=['scanimage','-v','-v','-p','--device-name',device,'--mode',mode,'--resolution',resolution,'-x',width,'-y',height,'--batch='+outputfile,'--batch-start',batchstart,'--batch-increment',batchincrement]
         run = subprocess.Popen(scancommand,stdout=logfile,stderr=logfile)
     else:
+        # ive not added the source here since there is no point if scanimage is not being run in batch mode
         scancommand=['scanimage','-v','-v','-p','--device-name',device,'--mode',mode,'--resolution',resolution,'-x',width,'-y',height]
         try:
             outfile_handle = open(outputfile,'w')
