@@ -33,22 +33,38 @@ ownedby = 'arjun:szhao'
 timeoffset = 5*60 # in seconds
 as_script = False
 debug = True 
-logfile = '/home/arjun/brscan/double-sided-scan.log'
-logfile_handle = open(logfile,'a')
+default_logdir = '/var/log/brscan/'
 waitlimit = 300 # a limit for waiting to fix errors
 today = datetime.date.today().isoformat() 
 
 # SCRIPT START
-# read arguments 
-# see if run as a script
-print("\n",today," Starting script at ", time.time())
+print("\n",today," Starting ", sys.argv[0]," at",time.time())
 
+# see if run as a script. as_script needed to parse arguments correctly.
 if not re.match(r'/usr/bin/.*python.*',sys.argv[0]):
     as_script = True
 
+# read arguments 
 args = sys.argv
-[directory,prefix,timenow,device,resolution,height,width,mode] \
+[directory,logdir,prefix,timenow,device,resolution,height,width,mode,docsource] \
         = parse_arguments(as_script,args)
+
+# set logdir. 
+try:
+    if not logdir:
+        # if LOGDIR is empty it will return False
+        logdir = default_logdir
+    # debugging
+    if not os.path.exists(logdir):
+        os.makedirs(logdir)
+
+    logfile = logdir + 'single-sided-scan.log'
+
+    logfile_handle = open(logfile,'a')
+except:
+    display("Error creating logdir")
+    logging.exception("Error creating logdir")
+    traceback.print_exc(file=sys.stdout)
 
 # print parameters and arguments on debug
 if debug:
@@ -82,7 +98,7 @@ if debug:
 # run scanner command
 outputfile = directory + '/' + prefix + '-' + str(int(timenow)) + '-part-%03d.pnm'
 if output == 'run_odd':
-    [out,err,processhandle] = run_scancommand(device,outputfile,width=width,height=height,logfile=logfile_handle,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart='1',batchincrement='2')
+    [out,err,processhandle] = run_scancommand(device,outputfile,width=width,height=height,logfile=logfile_handle,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart='1',batchincrement='2',docsource=docsource)
 else: # output == 'run_even'if
     # if no even files found within 5 minutes of each other
     # really these arguments to scancommand should not do type conversion for

@@ -41,11 +41,33 @@ allow me to do the following
 
 # TODO
 
-1.      Have to fix the logfile inside single-sided-scan.py. Currently it writes to a fixed /home/arjun directory. I should make this write to $HOME or something.
+1.      Create a new thinkpad git branch. Then you can merge things if necessary.
+1.      Install the newest version of brscan-skey and see if it passes along information about duplex scanning.
+1.      Have to fix the logfile inside single-sided-scan.py. Currently it writes to a fixed /home/arjun directory. I should make this write to $HOME or something. I think it fails now if the logfile does not exist.
 1.	Have to allow a directory argument to `run_chown`. Currently its being called by `convert_to_pdf` as well.
 1.	Have to fix single-sided-scan.py so that it accounts for permissions properly. 
 
 # Notes
+
+Jul 02 2018 I'm not sure scantoocr or double sided scan are needed for thinkpad. This is because the scanner automatically implements duplex scanning. Somehow, I'm not able to detect how the scanner is doing duplex. At the moment:
+
+1.  File scans Duplex by setting the docsource environment variable inside scantofile-xxx.sh
+1.  scantoocr is not used here. The easy way is to just use scantoocr when needed for duplex scanning.
+1.  The right way to do things, of course, is to upgrade the thinkpad to the newest brscan-skey scripts, and then see if a new environment variable or shell variable is passed to the script indicating duplex scanning.
+
+Right now, the scripts do dump the environment to the logfile. The logfile location has been hacked a bit. 
+
+Jul 02 2018 I have a little `parse_arguments` hacky script. I really should use the parser mechanism. This is inside scanutils.py and is quite messy.
+
+Jul 02 2018 At least the scan command ran this time with singlesidedscan
+
+Jul 02 2018 Made a little more progress with the logging mechanism on thinkpad. I think I figured out how to pass environment variables to python. The single-sided-scan.py file now reads a logdir option. This defaults to '/var/log/brscan' or it writes to the $LOGDIR environment variable if set. I'm still testing it. I would like to set the arguments using the longform options
+
+    --directory
+
+and so on, for single-sided-scan.py. I have not tested this, but I think pythons `parse_arguments` module should implement this.
+
+Apr 13 2018 Have to fix the logging mechanism using pythons logging module.
 
 Mar 23 2018 Has a hack that allows you to set the directory you're scanning the files to. This is implemented by adding two new environment variables in 
 
