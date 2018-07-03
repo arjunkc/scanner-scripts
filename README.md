@@ -41,6 +41,7 @@ allow me to do the following
 
 # TODO
 
+1.      Add argparse functionality. Working on this on Jul 03 2018
 1.      Create a new thinkpad git branch. Then you can merge things if necessary.
 1.      Install the newest version of brscan-skey and see if it passes along information about duplex scanning.
 1.      Have to fix the logfile inside single-sided-scan.py. Currently it writes to a fixed /home/arjun directory. I should make this write to $HOME or something. I think it fails now if the logfile does not exist.
@@ -48,6 +49,13 @@ allow me to do the following
 1.	Have to fix single-sided-scan.py so that it accounts for permissions properly. 
 
 # Notes
+
+Jul 03 2018 Working on argparse in scanutils. Almost done. Need to write a `get_default_scanner` script. Resume at line 115 on scanutils.py
+when constructing the command to call, empty argument should be ignored. i considered arguments like `get_default_mode,` but I think if double is specified, it should look for a Duplex. If it's found, it should scan in this mode. 
+
+options for mode, and source should probably be left alone. height and width are taken for letter, but these should also probably be left alone. The only thing that it should look for is the default device. It should also take the option --double, which will activate the double-sided-scan routines.
+
+
 
 Jul 02 2018 I'm not sure scantoocr or double sided scan are needed for thinkpad. This is because the scanner automatically implements duplex scanning. Somehow, I'm not able to detect how the scanner is doing duplex. At the moment:
 

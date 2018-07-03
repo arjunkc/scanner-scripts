@@ -3,6 +3,7 @@
 # To be imported as a module
 
 import os,sys,re,time,datetime,subprocess
+import argparse
 
 # define a function that takes in a list of files, and returns a list of files with timestamps that are within timeoffset 
 
@@ -76,7 +77,9 @@ def interleave_lists(l1,l2):
 # parsing arguments, setting default ones
 
 def parse_arguments(as_script,args):
+    parser = argparse.ArgumentParser(description='Process arguments for single and double sided scan')
     if not as_script:
+        # if called from within python for testing, set some defaults.
         directory = os.environ.get('HOME') + r'brscan/'
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -99,17 +102,21 @@ def parse_arguments(as_script,args):
         sys.exit(1)
     else:
         # else take options from command line
-        directory = args[1]
-        logdir = args[2]
-        prefix = args[3]
-        timenow = int(args[4])
-        device = args[5]
-        resolution = args[6]
-        height = args[7]
-        width = args[8]
-        mode = args[9]
-        docsource = args[10]
-    return [directory,logdir,prefix,timenow,device,resolution,height,width,mode,docsource]
+        parser.add_argument('--directory',type=string,action='store',default=os.environ.get('HOME') + r'brscan/')
+        parser.add_argument('--logdir',type=string,action='store',default=os.environ.get('HOME') + r'brscan/')
+        parser.add_argument('--prefix',type=string,action='store',default='brscan')
+        parser.add_argument('--timenow',type=string,action='store_const',const=int,default=time.time())
+        parser.add_argument('--device',type=string,action='store',default=get_default_device())
+        parser.add_argument('--resolution',type=string,action='store',default='300')
+        parser.add_argument('--height',type=string,action='store',default='290')
+        parser.add_argument('--width',type=string,action='store',default='215.88')
+        parser.add_argument('--mode',type=string,action='store')
+        parser.add_argument('--source',type=string,action='store')
+
+        # process options.
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    return 
 
 # odd or even part numbers
 def oddoreven_and_maxpart_number(filesclose,debug=False):
