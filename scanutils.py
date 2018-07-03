@@ -76,46 +76,47 @@ def interleave_lists(l1,l2):
 
 # parsing arguments, setting default ones
 
-def parse_arguments(as_script,args):
-    parser = argparse.ArgumentParser(description='Process arguments for single and double sided scan')
-    if not as_script:
-        # if called from within python for testing, set some defaults.
-        directory = os.environ.get('HOME') + r'brscan/'
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        logdir = r'/var/log/brscan'
-        prefix = 'brscan'
-        timenow = time.time()
-        device = 'brother4:net1;dev0'
-        resolution = '300'
-        # 11 inches is 279.40mm. 290 is about 11.4 inches to capture longer paper.
-        height = '290'
-        width = '215.88'
-        mode = 'Black & White'
-        docsource = ''
-    elif len(args) != 11:
-        # check number of command line options
-        display("need arguments for directory, prefix, timenow, device, resolution, height, width, mode, docsource\n",logfile=lfile)
-        display("arguments ",args,"\n",logfile=lfile)
-        Usage(as_script)
-        # return bad exit status
-        sys.exit(1)
-    else:
-        # else take options from command line
-        parser.add_argument('--directory',type=string,action='store',default=os.environ.get('HOME') + r'brscan/')
-        parser.add_argument('--logdir',type=string,action='store',default=os.environ.get('HOME') + r'brscan/')
-        parser.add_argument('--prefix',type=string,action='store',default='brscan')
-        parser.add_argument('--timenow',type=string,action='store_const',const=int,default=time.time())
-        parser.add_argument('--device',type=string,action='store',default=get_default_device())
-        parser.add_argument('--resolution',type=string,action='store',default='300')
-        parser.add_argument('--height',type=string,action='store',default='290')
-        parser.add_argument('--width',type=string,action='store',default='215.88')
-        parser.add_argument('--mode',type=string,action='store')
-        parser.add_argument('--source',type=string,action='store')
+def get_default_device():
+    """
+    runs scanimage -L, and picks the first Brother scanning device on the list
+    """
+    cmd = subprocess.Popen(['scanimage','-L'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,err = cmd.communicate()
+    # get list of devices
+    out = out.decode().split('\n')
+    for x in out:
+        if re.findall(r'(?i)brother',x):
+            # ok a bit inefficient
+            dev = re.sub(r"device `([^']*).*",r'\1',x)
 
-        # process options.
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+    # if dev not set return None
+    try:
+        dev
+        return dev
+    except:
+        print('No brother device found by script: here is scanimage -L output: ' + out,file=sys.stderr)
+        return None
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Process arguments for single and double sided scan')
+    # else take options from command line
+    parser.add_argument('--directory',type=string,action='store',default=os.environ.get('HOME') + r'brscan/')
+    parser.add_argument('--logdir',type=string,action='store',default=os.environ.get('HOME') + r'brscan/')
+    parser.add_argument('--prefix',type=string,action='store',default='brscan')
+    parser.add_argument('--timenow',type=string,action='store_const',const=int,default=time.time())
+    parser.add_argument('--device',type=string,action='store',default=get_default_device())
+    parser.add_argument('--resolution',type=string,action='store',default='300')
+    parser.add_argument('--height',type=string,action='store',default='290')
+    parser.add_argument('--width',type=string,action='store',default='215.88')
+    parser.add_argument('--mode',type=string,action='store')
+    #parser.add_argument('--mode',type=string,action='store',default = 'Black & White')
+    parser.add_argument('--source',type=string,action='store')
+    # by default, its not in double mode.
+    parser.add_argument('--double',action='store_false')
+
+    # process options.
+    if not os.path.exists(directory):
+        os.makedirs(directory)
     return 
 
 # odd or even part numbers

@@ -50,12 +50,16 @@ allow me to do the following
 
 # Notes
 
+Jul 03 2018 Made more progress on argparse. Have to test `get_default_scanner` and `parse_arguments`. You can do this in python.
+
 Jul 03 2018 Working on argparse in scanutils. Almost done. Need to write a `get_default_scanner` script. Resume at line 115 on scanutils.py
 when constructing the command to call, empty argument should be ignored. i considered arguments like `get_default_mode,` but I think if double is specified, it should look for a Duplex. If it's found, it should scan in this mode. 
 
-options for mode, and source should probably be left alone. height and width are taken for letter, but these should also probably be left alone. The only thing that it should look for is the default device. It should also take the option --double, which will activate the double-sided-scan routines.
+options for mode, and source should probably be left alone. height and width are taken for letter, but these should also probably be left alone. The only thing that it should look for is the default device. It should also take the option --double, which will activate the double-sided-scan routines. What if you wanted to do double-sided scanning from the flatbed? This is easy to do, you just flip the paper over as. So if you have a --double option, then it will see if the ADF supports Duplex, and it will pick a default mode from the --source options obtained from
 
+    scanimage -d <default device> -A
 
+Otherwise it will run my manual double scanning routing from the ADF.
 
 Jul 02 2018 I'm not sure scantoocr or double sided scan are needed for thinkpad. This is because the scanner automatically implements duplex scanning. Somehow, I'm not able to detect how the scanner is doing duplex. At the moment:
 
