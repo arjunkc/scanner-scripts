@@ -43,7 +43,7 @@ allow me to do the following
 
 1.      Add argparse functionality. Working on this on Jul 03 2018
 1.      Create a new thinkpad git branch. Then you can merge things if necessary.
-1.      Install the newest version of brscan-skey and see if it passes along information about duplex scanning.
+1.      ~~Install the newest version of brscan-skey and see if it passes along information about duplex scanning.~~ There are scripts that automatically create the files. I would have to see it work, but I don't really see it working. You can only scan from the flatbed, it seems, and it only creates single files, no batch mode. I should add this to the main section of the readme.
 1.      Have to fix the logfile inside single-sided-scan.py. Currently it writes to a fixed /home/arjun directory. I should make this write to $HOME or something. I think it fails now if the logfile does not exist.
 1.	Have to allow a directory argument to `run_chown`. Currently its being called by `convert_to_pdf` as well.
 1.	Have to fix single-sided-scan.py so that it accounts for permissions properly. 
