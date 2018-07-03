@@ -55,9 +55,16 @@ fi
 mkdir -p $LOGDIR
 touch ${logfile}
 
+# for debugging purposes, output arguments
+echo $* >> ${logfile}
+# export environment to logfile
+set >> ${logfile}
+echo $LOGDIR >> ${logfile}
+
 fileprefix='scantofile'
 /opt/brother/scanner/brscan-skey/script/single-sided-scan.py \
     ${SAVETO} \
+    ${LOGDIR} \
     ${fileprefix} \
     ${epochnow} \
     ${device} \

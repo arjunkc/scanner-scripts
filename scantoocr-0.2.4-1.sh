@@ -58,6 +58,7 @@ touch ${logfile}
 fileprefix='scantoocr'
 /opt/brother/scanner/brscan-skey/script/double-sided-scan.py \
     ${SAVETO} \
+    ${LOGDIR} \
     ${fileprefix} \
     ${epochnow} \
     ${device} \

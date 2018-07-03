@@ -77,7 +77,10 @@ def interleave_lists(l1,l2):
 
 def parse_arguments(as_script,args):
     if not as_script:
-        directory = r'/home/arjun/brscan/documents/'
+        directory = os.environ.get('HOME') + r'brscan/'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        logdir = r'/var/log/brscan'
         prefix = 'brscan'
         timenow = time.time()
         device = 'brother4:net1;dev0'
@@ -87,7 +90,7 @@ def parse_arguments(as_script,args):
         width = '215.88'
         mode = 'Black & White'
         docsource = ''
-    elif len(args) != 10:
+    elif len(args) != 11:
         # check number of command line options
         display("need arguments for directory, prefix, timenow, device, resolution, height, width, mode, docsource\n",logfile=lfile)
         display("arguments ",args,"\n",logfile=lfile)
@@ -97,15 +100,16 @@ def parse_arguments(as_script,args):
     else:
         # else take options from command line
         directory = args[1]
-        prefix = args[2]
-        timenow = int(args[3])
-        device = args[4]
-        resolution = args[5]
-        height = args[6]
-        width = args[7]
-        mode = args[8]
-        docsource = args[9]
-    return [directory,prefix,timenow,device,resolution,height,width,mode,docsource]
+        logdir = args[2]
+        prefix = args[3]
+        timenow = int(args[4])
+        device = args[5]
+        resolution = args[6]
+        height = args[7]
+        width = args[8]
+        mode = args[9]
+        docsource = args[10]
+    return [directory,logdir,prefix,timenow,device,resolution,height,width,mode,docsource]
 
 # odd or even part numbers
 def oddoreven_and_maxpart_number(filesclose,debug=False):
