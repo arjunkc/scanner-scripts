@@ -41,16 +41,23 @@ allow me to do the following
 
 # TODO
 
-1.      Add argparse functionality. Working on this on Jul 03 2018
+1.      display should see if a global logfile variable has been set and its writeable. If not, it should just print to screen.
+1.      ~~To test single-sided-scan.py after going through the code.~~ Jul 04 2018 Seems to be working, as far as I can tell from the command line. To test from scanner directly.
+1.      Add argparse functionality. Working on this on Jul 03 2018. Still working, updated `run_scancommand.`
 1.      Create a new thinkpad git branch. Then you can merge things if necessary.
-1.      ~~Install the newest version of brscan-skey and see if it passes along information about duplex scanning.~~ There are scripts that automatically create the files. I would have to see it work, but I don't really see it working. You can only scan from the flatbed, it seems, and it only creates single files, no batch mode. I should add this to the main section of the readme.
+1.      Integrate double-sided-scan.py functionality into a single file.
+1.      ~~Install the newest version of brscan-skey and see if it passes along information about duplex scanning.~~ There are scripts that automatically create the files. I would have to see it work, but I don't really see it working. You can only scan from the flatbed, it seems, and it only creates single files, no batch mode. I should add this to the main section of the readme. I tested the basic scripts from brother. The scantofile script is automatically generated, and it does not seem to capture the "double" sided option at all.
 1.      Have to fix the logfile inside single-sided-scan.py. Currently it writes to a fixed /home/arjun directory. I should make this write to $HOME or something. I think it fails now if the logfile does not exist.
 1.	Have to allow a directory argument to `run_chown`. Currently its being called by `convert_to_pdf` as well.
 1.	Have to fix single-sided-scan.py so that it accounts for permissions properly. 
 
 # Notes
 
-Jul 03 2018 Made more progress on argparse. Have to test `get_default_scanner` and `parse_arguments`. You can do this in python.
+Jul 04 2018 Made `run_scancommand` a bit simpler so that it only runs in batch mode. I made the option names match the scancommand option names. I've tested `run_scancommand`, and it seems to work
+
+Jul 03 2018 Even with the newer scripts, the brother automatic scan button does not seem to indicate that it can do duplex scans to brscan-skey.
+
+Jul 03 2018 Made more progress on argparse. Have to test `get_default_scanner` and `parse_arguments`. You can do this in python. I have tested `get_default_scanner`. Still working on `parse_arguments`. Figuring out nargs, const and default.
 
 Jul 03 2018 Working on argparse in scanutils. Almost done. Need to write a `get_default_scanner` script. Resume at line 115 on scanutils.py
 when constructing the command to call, empty argument should be ignored. i considered arguments like `get_default_mode,` but I think if double is specified, it should look for a Duplex. If it's found, it should scan in this mode. 

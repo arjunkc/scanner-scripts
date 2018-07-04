@@ -10,15 +10,16 @@ import argparse
 def Usage(as_script):
     if as_script:
         sys.stdout.write("Usage:\n")
-        sys.stdout.write("\t" + sys.argv[0] + "<directory name> <fileprefix=brscan> <time in seconds from epoch> <etc>\n")
+        sys.stdout.write("\t" + sys.argv[0] + "<outputdir name> <fileprefix=brscan> <time in seconds from epoch> <etc>\n")
         sys.stdout.flush()
 
 def display(*s,logfile=None):
     # display string with the correct function.
     if logfile==None:
-        logfile=open('/tmp/brscan.log','a')
-    print(*s,file=logfile)
-    logfile.flush()
+        print(*s)
+    else:
+        print(*s,file=logfile)
+        logfile.flush()
 
 # file name handling functions
 def file_time(filename,match_string_time):
@@ -97,28 +98,6 @@ def get_default_device():
         print('No brother device found by script: here is scanimage -L output: ' + out,file=sys.stderr)
         return None
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description='Process arguments for single and double sided scan')
-    # else take options from command line
-    parser.add_argument('--directory',type=string,action='store',default=os.environ.get('HOME') + r'brscan/')
-    parser.add_argument('--logdir',type=string,action='store',default=os.environ.get('HOME') + r'brscan/')
-    parser.add_argument('--prefix',type=string,action='store',default='brscan')
-    parser.add_argument('--timenow',type=string,action='store_const',const=int,default=time.time())
-    parser.add_argument('--device',type=string,action='store',default=get_default_device())
-    parser.add_argument('--resolution',type=string,action='store',default='300')
-    parser.add_argument('--height',type=string,action='store',default='290')
-    parser.add_argument('--width',type=string,action='store',default='215.88')
-    parser.add_argument('--mode',type=string,action='store')
-    #parser.add_argument('--mode',type=string,action='store',default = 'Black & White')
-    parser.add_argument('--source',type=string,action='store')
-    # by default, its not in double mode.
-    parser.add_argument('--double',action='store_false')
-
-    # process options.
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    return 
-
 # odd or even part numbers
 def oddoreven_and_maxpart_number(filesclose,debug=False):
     # if some matches are found
@@ -137,37 +116,55 @@ def oddoreven_and_maxpart_number(filesclose,debug=False):
         display(output,"maximum part number = ",maxpart+1)
     return (output,maxpart)
 
-def run_scancommand(device,outputfile,width='215.88',height='279.4',mode='Black & White',resolution='300',batch=False,batchstart='1',batchincrement='1',docsource='',debug=False,logfile=None):
-    print("Running scanimage")
-    if batch:
-        if docsource != '':
-            scancommand=['scanimage','-v','-v','-p','--device-name',device,'--mode',mode,'--resolution',resolution,'-x',width,'-y',height,'--batch='+outputfile,'--batch-start',batchstart,'--batch-increment',batchincrement,'--source',docsource]
-        else:
-            scancommand=['scanimage','-v','-v','-p','--device-name',device,'--mode',mode,'--resolution',resolution,'-x',width,'-y',height,'--batch='+outputfile,'--batch-start',batchstart,'--batch-increment',batchincrement]
-        run = subprocess.Popen(scancommand,stdout=logfile,stderr=logfile)
-    else:
-        # ive not added the source here since there is no point if scanimage is not being run in batch mode
-        scancommand=['scanimage','-v','-v','-p','--device-name',device,'--mode',mode,'--resolution',resolution,'-x',width,'-y',height]
-        try:
-            outfile_handle = open(outputfile,'w')
-        except:
-            display("Error opening outputfile",logfile=logfile)
-        # when run without --batch, scanimage writes image date directly to
-        # stdout. So we have to capture the stdout of a scancommand directly in
-        # the outputfile handle
-        run = subprocess.Popen(scancommand,stdout=outfile_handle,stderr=logfile)
-    if debug:
-        if logfile == None:
-            logfile = open('/tmp/brscan.log','a')
-        display('scancommand: ', scancommand,logfile=logfile)
-    out,err = run.communicate()
-    return out,err,run
+def run_scancommand(device_name,outputfile,width=None,height=None,mode=None,resolution=None,batch=False,batch_start='1',batch_increment='1',source=None,debug=False,logfile=None):
+    '''
+    device_name and outputfile are required options.
+    I've removed the batch option. It's always run in batch mode. So even if its just one file from the flatbed, it will scan it batch mode and name it <blah>-part-01.pnm
+    '''
 
-def convert_to_pdf(directory='/home/arjun/brscan/documents/',outputtype='pdf',wait=10,debug=False,logfile=None):
+    print("Inside run_scancommand, about to run scanimage")
+    # args = directory\|logdir\|prefix\|timenow\|device_name\|resolution\|height\|width\|mode\|source
+    if debug:
+        # -p prints progress
+        scancommand = ['scanimage','-v','-v','-p']
+    else:
+        scancommand = ['scanimage','-v']
+
+    # add outputfile option
+    scancommand = scancommand + ['--batch='+outputfile]
+    for op in ['device_name','batch_start','batch_increment','resolution','mode','source']:
+        # if option is not False or None
+        if eval(op):
+            # this relies on the option variable name matching the scancommand option name
+            scancommand = scancommand + ['--' + op.replace('_','-') , eval(op) ]
+
+    if logfile == None:
+        # could also be set in the default options in the function definition, but does not seem to work at the moment. not fully tested.
+        logfile = open('/tmp/brscan.log','a')
+
+    # debugging information 
+    if debug:
+        display('scancommand: ', scancommand,logfile=logfile)
+        print(scancommand)
+
+    # run scancommand
+    run = subprocess.Popen(scancommand,stdout=logfile,stderr=logfile)
+    #except:
+        #display('Error running scancommand',logfile=logfile)
+
+    out,err = run.communicate()
+
+    return out,err,run
+    # old code, can be deleted. if not run in batch mode, scanimage output must be redirected to stdout.
+    # runs scanimage in single page mode with its output going to stdout , which is then redirected to outputfile
+    #outfile_handle = open(outputfile,'w')
+    #run = subprocess.Popen(scancommand,stdout=outfile_handle,stderr=logfile)
+
+def convert_to_pdf(outputdir='/home/arjun/brscan/documents/',outputtype='pdf',wait=10,debug=False,logfile=None):
     print("Converting raw scanned files to " + outputtype)
     os.system('sleep ' + str(wait))
-    cmd = ['/home/arjun/bin/misc_scripts/convert-compress-delete','-t',"pdf",'-d',directory,'-y']
-    os.system('chown arjun:szhao ' + directory + '*')
+    cmd = ['/home/arjun/bin/misc_scripts/convert-compress-delete','-t',"pdf",'-d',outputdir,'-y']
+    os.system('chown arjun:szhao ' + outputdir + '*')
     run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
     if debug:
         out,err = run.communicate()

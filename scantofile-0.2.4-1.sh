@@ -46,6 +46,7 @@ mkdir -p $SAVETO
 
 # LOGFILE
 scriptname=$(basename "$0")
+basedir=$(dirname "$0")
 if [[ -z $LOGDIR ]]; then
     # $0 refers to the script name
     logfile=${HOME}"/brscan/$scriptname.log"
@@ -62,16 +63,16 @@ set >> ${logfile}
 echo $LOGDIR >> ${logfile}
 
 fileprefix='scantofile'
-/opt/brother/scanner/brscan-skey/script/single-sided-scan.py \
-    ${SAVETO} \
-    ${LOGDIR} \
-    ${fileprefix} \
-    ${epochnow} \
-    ${device} \
-    ${resolution} \
-    $height \
-    $width \
-    "$mode" \
-    "$docsource" \
+${basedir}/single-sided-scan.py \
+    --outputdir ${SAVETO} \
+    --logdir ${LOGDIR} \
+    --prefix ${fileprefix} \
+    --timenow ${epochnow} \
+    --device-name ${device} \
+    --resolution ${resolution} \
+    --height $height \
+    --width $width \
+    --mode "$mode" \
+    --source "$docsource" \
     >> $logfile 2>&1 
 
