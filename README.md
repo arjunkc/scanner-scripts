@@ -41,11 +41,11 @@ allow me to do the following
 
 # TODO
 
+1.      Integrate double-sided-scan.py functionality into a single file. Has to check if device supports duplex mode. If it doesn't it will run the double-sided functionality that asks you to scan things twice.
 1.      display should see if a global logfile variable has been set and its writeable. If not, it should just print to screen.
 1.      ~~To test single-sided-scan.py after going through the code.~~ Jul 04 2018 Seems to be working, as far as I can tell from the command line. To test from scanner directly.
-1.      Add argparse functionality. Working on this on Jul 03 2018. Still working, updated `run_scancommand.`
+1.      ~~Add argparse functionality. Working on this on Jul 03 2018. Still working, updated `run_scancommand.`~~
 1.      Create a new thinkpad git branch. Then you can merge things if necessary.
-1.      Integrate double-sided-scan.py functionality into a single file.
 1.      ~~Install the newest version of brscan-skey and see if it passes along information about duplex scanning.~~ There are scripts that automatically create the files. I would have to see it work, but I don't really see it working. You can only scan from the flatbed, it seems, and it only creates single files, no batch mode. I should add this to the main section of the readme. I tested the basic scripts from brother. The scantofile script is automatically generated, and it does not seem to capture the "double" sided option at all.
 1.      Have to fix the logfile inside single-sided-scan.py. Currently it writes to a fixed /home/arjun directory. I should make this write to $HOME or something. I think it fails now if the logfile does not exist.
 1.	Have to allow a directory argument to `run_chown`. Currently its being called by `convert_to_pdf` as well.
