@@ -103,43 +103,116 @@ match_string_part = args.outputdir + '/' + args.prefix+'-[0-9]+-'+part+r'-([0-9]
 if debug:
     display('Look for scanned files of the following form (regex): ', match_string_part)
 
-# make outputfile
-outputfile = args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-%03d.pnm'
+if args.double and not is_duplex_capable() :
+    # then run complex double sided scanning routines.
+    # find all files in directory
+    try:
+        files = filelist('ls ' + directory + prefix + '*-part-*.pdf')
+    except:
+        # ls might not find any files
+        files = []
+        if debug:
+            display("\nNo close by files found\n",logfile=logfile_handle)
 
-# run scan command
-[out,err,processhandle] = run_scancommand(args.device_name,outputfile,width=args.width,height=args.height,logfile=logfile_handle,debug=debug,mode=args.mode,resolution=args.resolution,batch_start='1',batch_increment='1',source=args.source)
-
-# see if files have been created.
-os.system('sleep 3')
-try:
-    files = filelist('ls ' + args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-*.pnm')
+    # find files close in creation time (specified by timeoffset) to other files in the directory
+    # files close will contain a list of tuples containing (filetime, part number, filename)
+    filesclose = files_within_timeoffset(files,match_string_time,match_string_part,timenow,timeoffset,debug=debug)
     if debug:
-        display('files scanned after 3 seconds: ',files)
-except:
-    display("error in ls; probably no scanned files found. check permissions and/or pathname.")
+        display(files,filesclose,logfile=logfile_handle)
 
-# find number of files by scanning the part number of the last file.
-# assumes that the list is sorted.
-if len(files) > 0:
-    number_scanned = file_part(files[-1],match_string_part)
-else:
-    number_scanned = 0
+    # determine whether to run odd or even; if even, also find the  max part number of the file. 
+    (output,maxpart) = oddoreven_and_maxpart_number(filesclose,debug=debug)
 
-if debug:
-    display("number_scanned: " + str(number_scanned),logfile=logfile_handle)
+    # run scanner command
+    outputfile = directory + '/' + prefix + '-' + str(int(timenow)) + '-part-%03d.pnm'
+    if output == 'run_odd':
+        [out,err,processhandle] = run_scancommand(device,outputfile,width=width,height=height,logfile=logfile_handle,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart='1',batchincrement='2',docsource=docsource)
+    else: # output == 'run_even'if
+        # if no even files found within 5 minutes of each other
+        # really these arguments to scancommand should not do type conversion for
+        # the numerican arguments. to fix.
+        [out,err,processhandle] = run_scancommand(device,outputfile,width=width,height=height,logfile=logfile_handle,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart=str(maxpart+1),batchincrement='-2')
 
-if number_scanned > 0:
+    # convert files to pdf
+    # implement wait limit here. use subprocess.wait for a process to finish.
+    # otherwise this thing crashes. run_scancommand should return a subprocess
+    # handle so you can wait for it 
+    os.system('sleep 3')
+    run = filelist('ls ' + directory + prefix + '-' + str(int(timenow)) + '-part-*.pnm')
+    # find number of files by scanning the part number of the last file.
+    # assumes that the list is sorted.
+    number_scanned = file_part(run[-1],match_string_part)
+    if debug:
+        display("number_scanned: " + str(number_scanned),logfile=logfile_handle)
+
     # wait for a time proportional to the number scanned
-    convert_to_pdf(outputdir=args.outputdir,outputtype='pdf',wait=int(number_scanned/3.0),debug=debug,logfile=logfile_handle)
+    convert_to_pdf(directory=directory,outputtype='pdf',wait=int(number_scanned/3.0),debug=debug,logfile=logfile_handle)
 
     # find newly converted files
-    convertedfiles = filelist('ls ' + args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-*.pdf')
+    newfiles = filelist('ls ' + directory + prefix + '-' + str(int(timenow)) + '-part-*.pdf')
 
     # make a filelist and output filename to pdftk
-    compiled_pdf_filename = args.outputdir + '/' + args.prefix + '-' + today + '-' + str(int(time.time())) + '.pdf'
+    if output == 'run_odd':
+        compiled_pdf_filename = directory + prefix + '-' + today + '-' + str(int(time.time())) + '-odd.pdf'
+        filestopdftk = newfiles
+    elif output == 'run_even':
+       # if scanned even parts, and hence max part number is bigger than 1
+       oldfiles = [x[2] for x in filesclose]
+       oldfiles.sort() #newfiles should be sorted already
+       # new files have been ensured to be in sorted order.
+       # interleave two lists, nested for loops
+       allfiles = interleave_lists(oldfiles,newfiles)
+       if debug:
+           display('filelist: ' , allfiles,logfile=logfile_handle)
+       # ensures that the filename for compiled pdf is unique
+       compiled_pdf_filename = directory + prefix + '-' + today + '-' + str(int(time.time())) + '.pdf'
+       filestopdftk = allfiles
 
-    run_pdftk(convertedfiles,compiled_pdf_filename,debug=debug,logfile=logfile_handle)
+    run_pdftk(filestopdftk,compiled_pdf_filename,debug=debug,logfile=logfile_handle)
+    #close logfile
+    logfile_handle.close() 
 
-    # make the files owned by a certain somebody
-    run_chown(ownedby,compiled_pdf_filename,debug=debug,logfile=logfile_handle)
+    # make the files owned by certain somebody
+    if not ownedby:
+        subprocess.Popen(['chown',ownedby,compiled_pdf_filename])
 
+else: # simply run single sided scanning routing
+    # make outputfile
+    outputfile = args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-%03d.pnm'
+
+    # run scan command
+    [out,err,processhandle] = run_scancommand(args.device_name,outputfile,width=args.width,height=args.height,logfile=logfile_handle,debug=debug,mode=args.mode,resolution=args.resolution,batch_start='1',batch_increment='1',source=args.source)
+
+    # see if files have been created.
+    os.system('sleep 3')
+    try:
+        files = filelist('ls ' + args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-*.pnm')
+        if debug:
+            display('files scanned after 3 seconds: ',files)
+    except:
+        display("error in ls; probably no scanned files found. check permissions and/or pathname.")
+
+    # find number of files by scanning the part number of the last file.
+    # assumes that the list is sorted.
+    if len(files) > 0:
+        number_scanned = file_part(files[-1],match_string_part)
+    else:
+        number_scanned = 0
+
+    if debug:
+        display("number_scanned: " + str(number_scanned),logfile=logfile_handle)
+
+    if number_scanned > 0:
+        # wait for a time proportional to the number scanned
+        convert_to_pdf(outputdir=args.outputdir,outputtype='pdf',wait=int(number_scanned/3.0),debug=debug,logfile=logfile_handle)
+
+        # find newly converted files
+        convertedfiles = filelist('ls ' + args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-*.pdf')
+
+        # make a filelist and output filename to pdftk
+        compiled_pdf_filename = args.outputdir + '/' + args.prefix + '-' + today + '-' + str(int(time.time())) + '.pdf'
+
+        run_pdftk(convertedfiles,compiled_pdf_filename,debug=debug,logfile=logfile_handle)
+
+        # make the files owned by a certain somebody
+        run_chown(ownedby,compiled_pdf_filename,debug=debug,logfile=logfile_handle)

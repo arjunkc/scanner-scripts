@@ -9,8 +9,8 @@
 # ~~Dec 31 2016 To do, finish the scanning and converting into a single file
 # part.~~
 # ~~Jan 11 2017 perhaps a fairly fail-safe system would be to create a
-# compilation file with all the pdfs produces so far called odd, and one called
-# even. Then even if you don't copy the even parts, the odd parts will be
+# ~~compilation file with all the pdfs produces so far called odd, and one called
+# even. Then even if you don't copy the even parts, the odd parts will be~~
 # compiled.~~
 # ~~Jan 11 2017 seems to be working now~~
 # ~~Jul 16 2017 Add more functions so that it is easier to combine two sets of
