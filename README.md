@@ -53,6 +53,12 @@ allow me to do the following
 
 # Notes
 
+Jul 04 2018 It seems that the `--source` option you obtain using
+
+    scanimage -A -d 'device'
+
+will list Duplex scanning even if its not possible for the device! So I will have to setup an DUPLEXTYPE option in the cfg file. I will also setup a DUPLEXSOURCE option so you can set 'Automatic Document Feeder (centrally aligned,Duplex)' as a default option.
+
 Jul 04 2018 Made `run_scancommand` a bit simpler so that it only runs in batch mode. I made the option names match the scancommand option names. I've tested `run_scancommand`, and it seems to work
 
 Jul 03 2018 Even with the newer scripts, the brother automatic scan button does not seem to indicate that it can do duplex scans to brscan-skey.
