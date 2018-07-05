@@ -25,7 +25,7 @@ def parse_arguments():
     parser.add_argument('--outputdir',nargs='?',action='store',default=default_outdir,const=default_outdir)
     parser.add_argument('--logdir',nargs='?',action='store',default=default_logdir,const=default_logdir)
     parser.add_argument('--prefix',nargs='?',action='store',default='brscan',const='brscan')
-    parser.add_argument('--timenow',nargs='?',type=int,action='store',const=time.time(),default=time.time())
+    parser.add_argument('--timenow',nargs='?',type=int,action='store',const=int(time.time()),default=int(time.time()))
     parser.add_argument('--device-name',nargs='?',action='store',const=None,default=None)
     #parser.add_argument('--device_name',nargs='?',action='store',const=1,default=1)
     parser.add_argument('--resolution',nargs='?',action='store',default='300',const='300')
@@ -35,7 +35,10 @@ def parse_arguments():
     #parser.add_argument('--mode',action='store',default = 'Black & White')
     parser.add_argument('--source',nargs='?',action='store',default=None,const=None)
     # by default, its not in double mode.
-    parser.add_argument('--double',action='store_true')
+    parser.add_argument('--duplex',action='store_true')
+    # requires exactly one argument, but this not set by nargs
+    # duplextype takes auto and manual. 
+    parser.add_argument('--duplextype',action='store',default='auto')
     args,unknown = parser.parse_known_args()
 
     # process options.
@@ -43,8 +46,32 @@ def parse_arguments():
         if debug:
             display('No device name set. Trying to automatically find default device')
         args.device_name = get_default_device()
-    #if not os.path.exists(outputdir):
-        #os.makedirs(outputdir)
+
+    # check logdir and outputdir, and then normalize the paths
+    if not os.path.exists(args.logdir):
+        if debug:
+            display('Log directory ',args.logdir,' does not exist. Creating.')
+        os.makedirs(args.logdir)
+        # normalize name so that its easy to find
+        args.logdir = os.path.normpath(args.logdir)
+
+    if not os.path.exists(args.outputdir):
+        if debug:
+            display('Output directory ',args.outputdir,' does not exist. Creating.')
+        os.makedirs(args.outputdir)
+        # normalize name so that its easy to find
+        args.outputdir = os.path.normpath(args.outputdir)
+
+    # if args.duplex is passed, look at duplextype 
+    # if duplextype is auto, then look for duplex source. If it's empty
+    # choose something automatically from the driver. If it's set, use it.
+    # if duplextype is manual, then again look for duplex source. If it's empty, leave it unset.
+    # this is because if it's done manually, then the source does not really matter.
+    if args.duplex:
+        # command line option seen first
+        if not args.source:
+            if args.duplextype == 'auto':
+                args.source = get_default_duplex_source()
 
     return args
 
@@ -69,20 +96,6 @@ try:
     if debug:
         display('log directory: ',args.logdir)
 
-    if not os.path.exists(args.logdir):
-        if debug:
-            display('Log directory ',args.logdir,' does not exist. Creating.')
-        os.makedirs(args.logdir)
-        # normalize name so that its easy to find
-        args.logdir = os.path.normpath(args.logdir)
-
-    if not os.path.exists(args.outputdir):
-        if debug:
-            display('Output directory ',args.outputdir,' does not exist. Creating.')
-        os.makedirs(args.outputdir)
-        # normalize name so that its easy to find
-        args.outputdir = os.path.normpath(args.outputdir)
-
     logfile = args.logdir + 'single-sided-scan.log'
 
     logfile_handle = open(logfile,'a')
@@ -103,7 +116,7 @@ match_string_part = args.outputdir + '/' + args.prefix+'-[0-9]+-'+part+r'-([0-9]
 if debug:
     display('Look for scanned files of the following form (regex): ', match_string_part)
 
-if args.double and not is_duplex_capable() :
+if args.double and args.duplextype == 'manual' 
     # then run complex double sided scanning routines.
     # find all files in directory
     try:

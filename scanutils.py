@@ -98,6 +98,19 @@ def get_default_device():
         print('No brother device found by script: here is scanimage -L output: ' + out,file=sys.stderr)
         return None
 
+def get_default_duplex_source(device_name):
+    cmd = subprocess.Popen(['scanimage','-A','-d',device_name],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    out,err = cmd.communicate()
+    out = out.decode()
+    if re.findall(r'--source',out):
+        if debug:
+            display('get_default_duplex_source: Found source line in scanimage output.')
+        # scanner sources for paper
+        sources = re.sub(r'.*?--source\s*([^\n]*).*',r'\1',out,flags=re.DOTALL).split('|')
+        for x in sources:
+            if re.findall(r'duplex',x,re.IGNORECASE):
+                return x
+
 # odd or even part numbers
 def oddoreven_and_maxpart_number(filesclose,debug=False):
     # if some matches are found
