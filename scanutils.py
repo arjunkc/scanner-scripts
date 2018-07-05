@@ -103,8 +103,11 @@ def get_default_duplex_source(device_name):
     out,err = cmd.communicate()
     out = out.decode()
     if re.findall(r'--source',out):
-        if debug:
-            display('get_default_duplex_source: Found source line in scanimage output.')
+        try:
+            if debug:
+                display('get_default_duplex_source: Found source line in scanimage output.')
+        except:
+            display('debug not defined')
         # scanner sources for paper
         sources = re.sub(r'.*?--source\s*([^\n]*).*',r'\1',out,flags=re.DOTALL).split('|')
         for x in sources:
