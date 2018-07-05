@@ -46,6 +46,7 @@ mkdir -p $SAVETO
 
 # LOGFILE
 scriptname=$(basename "$0")
+basedir=$(dirname "$0")
 if [[ -z $LOGDIR ]]; then
     # $0 refers to the script name
     logfile=${HOME}"/brscan/$scriptname.log"
@@ -55,17 +56,24 @@ fi
 mkdir -p $LOGDIR
 touch ${logfile}
 
+# for debugging purposes, output arguments
+echo $* >> ${logfile}
+# export environment to logfile
+set >> ${logfile}
+echo $LOGDIR >> ${logfile}
+
 fileprefix='scantoocr'
-/opt/brother/scanner/brscan-skey/script/double-sided-scan.py \
-    ${SAVETO} \
-    ${LOGDIR} \
-    ${fileprefix} \
-    ${epochnow} \
-    ${device} \
-    ${resolution} \
-    $height \
-    $width \
-    "$mode" \
-    "$docsource" \
+${basedir}/double-sided-scan.py \
+    --outputdir ${SAVETO} \
+    --logdir ${LOGDIR} \
+    --prefix ${fileprefix} \
+    --timenow ${epochnow} \
+    --device-name ${device} \
+    --resolution ${resolution} \
+    --height $height \
+    --width $width \
+    --mode "$mode" \
+    --source "$docsource" \
+    --duplex "manual"
     >> $logfile 2>&1 
 

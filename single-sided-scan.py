@@ -9,6 +9,7 @@ from scanutils import *
 # SETTINGS
 part = 'part'
 ownedby = 'arjun:szhao'
+timeoffset = 5*60 # in seconds
 as_script = False
 debug = True 
 default_logdir = os.environ.get('HOME') + r'brscan/'
@@ -116,11 +117,12 @@ match_string_part = args.outputdir + '/' + args.prefix+'-[0-9]+-'+part+r'-([0-9]
 if debug:
     display('Look for scanned files of the following form (regex): ', match_string_part)
 
-if args.double and args.duplextype == 'manual' 
+if args.duplex and args.duplextype == 'manual' 
     # then run complex double sided scanning routines.
+
     # find all files in directory
     try:
-        files = filelist('ls ' + directory + prefix + '*-part-*.pdf')
+        files = filelist('ls ' + args.outputdir + '/' + args.prefix + '*-part-*.pdf')
     except:
         # ls might not find any files
         files = []
@@ -129,7 +131,7 @@ if args.double and args.duplextype == 'manual'
 
     # find files close in creation time (specified by timeoffset) to other files in the directory
     # files close will contain a list of tuples containing (filetime, part number, filename)
-    filesclose = files_within_timeoffset(files,match_string_time,match_string_part,timenow,timeoffset,debug=debug)
+    filesclose = files_within_timeoffset(files,match_string_time,match_string_part,args.timenow,timeoffset,debug=debug)
     if debug:
         display(files,filesclose,logfile=logfile_handle)
 
@@ -137,21 +139,21 @@ if args.double and args.duplextype == 'manual'
     (output,maxpart) = oddoreven_and_maxpart_number(filesclose,debug=debug)
 
     # run scanner command
-    outputfile = directory + '/' + prefix + '-' + str(int(timenow)) + '-part-%03d.pnm'
+    outputfile = args.outputdir + '/' + args.prefix + '-' + str(args.timenow) + '-part-%03d.pnm'
     if output == 'run_odd':
-        [out,err,processhandle] = run_scancommand(device,outputfile,width=width,height=height,logfile=logfile_handle,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart='1',batchincrement='2',docsource=docsource)
+        [out,err,processhandle] = run_scancommand(args.device_name,outputfile,width=args.width,height=args.height,logfile=logfile_handle,debug=debug,mode=args.mode,resolution=args.resolution,batch=True,batch_start='1',batch_increment='2',source=args.source)
     else: # output == 'run_even'if
         # if no even files found within 5 minutes of each other
         # really these arguments to scancommand should not do type conversion for
         # the numerican arguments. to fix.
-        [out,err,processhandle] = run_scancommand(device,outputfile,width=width,height=height,logfile=logfile_handle,debug=debug,mode=mode,resolution=resolution,batch=True,batchstart=str(maxpart+1),batchincrement='-2')
+        [out,err,processhandle] = run_scancommand(args.device_name,outputfile,width=args.width,height=args.height,logfile=logfile_handle,debug=debug,mode=args.mode,resolution=args.resolution,batch=True,batch_start=str(maxpart+1),batch_increment='-2')
 
     # convert files to pdf
     # implement wait limit here. use subprocess.wait for a process to finish.
     # otherwise this thing crashes. run_scancommand should return a subprocess
     # handle so you can wait for it 
     os.system('sleep 3')
-    run = filelist('ls ' + directory + prefix + '-' + str(int(timenow)) + '-part-*.pnm')
+    run = filelist('ls ' + args.outputdir + '/' + args.prefix + '-' + str(args.timenow) + '-part-*.pnm')
     # find number of files by scanning the part number of the last file.
     # assumes that the list is sorted.
     number_scanned = file_part(run[-1],match_string_part)
@@ -159,14 +161,14 @@ if args.double and args.duplextype == 'manual'
         display("number_scanned: " + str(number_scanned),logfile=logfile_handle)
 
     # wait for a time proportional to the number scanned
-    convert_to_pdf(directory=directory,outputtype='pdf',wait=int(number_scanned/3.0),debug=debug,logfile=logfile_handle)
+    convert_to_pdf(directory=args.outputdir,outputtype='pdf',wait=int(number_scanned/3.0),debug=debug,logfile=logfile_handle)
 
     # find newly converted files
-    newfiles = filelist('ls ' + directory + prefix + '-' + str(int(timenow)) + '-part-*.pdf')
+    newfiles = filelist('ls ' + args.outputdir +  '/' + args.prefix + '-' + str(args.timenow) + '-part-*.pdf')
 
     # make a filelist and output filename to pdftk
     if output == 'run_odd':
-        compiled_pdf_filename = directory + prefix + '-' + today + '-' + str(int(time.time())) + '-odd.pdf'
+        compiled_pdf_filename = args.outputdir +  '/' + args.prefix + '-' + today + '-' + str(int(time.time())) + '-odd.pdf'
         filestopdftk = newfiles
     elif output == 'run_even':
        # if scanned even parts, and hence max part number is bigger than 1
@@ -178,7 +180,7 @@ if args.double and args.duplextype == 'manual'
        if debug:
            display('filelist: ' , allfiles,logfile=logfile_handle)
        # ensures that the filename for compiled pdf is unique
-       compiled_pdf_filename = directory + prefix + '-' + today + '-' + str(int(time.time())) + '.pdf'
+       compiled_pdf_filename = args.outputdir +  '/' + args.prefix + '-' + today + '-' + str(int(time.time())) + '.pdf'
        filestopdftk = allfiles
 
     run_pdftk(filestopdftk,compiled_pdf_filename,debug=debug,logfile=logfile_handle)
@@ -189,7 +191,8 @@ if args.double and args.duplextype == 'manual'
     if not ownedby:
         subprocess.Popen(['chown',ownedby,compiled_pdf_filename])
 
-else: # simply run single sided scanning routing
+else: # simply run single sided scanning routine
+    # in case we have args.duplex and args.duplextype = 'manual'
     # make outputfile
     outputfile = args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-%03d.pnm'
 
