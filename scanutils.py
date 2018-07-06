@@ -132,7 +132,7 @@ def oddoreven_and_maxpart_number(filesclose,debug=False):
         display(output,"maximum part number = ",maxpart+1)
     return (output,maxpart)
 
-def run_scancommand(device_name,outputfile,width=None,height=None,mode=None,resolution=None,batch=False,batch_start='1',batch_increment='1',source=None,debug=False,logfile=None):
+def run_scancommand(device_name,outputfile,width=None,height=None,mode=None,resolution=None,batch=False,batch_start='1',batch_increment='1',source=None,debug=False,logfile=None,dry_run=False):
     '''
     device_name and outputfile are required options.
     I've removed the batch option. It's always run in batch mode. So even if its just one file from the flatbed, it will scan it batch mode and name it <blah>-part-01.pnm
@@ -160,17 +160,21 @@ def run_scancommand(device_name,outputfile,width=None,height=None,mode=None,reso
 
     # debugging information 
     if debug:
-        display('scancommand: ', scancommand,logfile=logfile)
+        display('scancommand: ', scancommand)
         print(scancommand)
 
     # run scancommand
-    run = subprocess.Popen(scancommand,stdout=logfile,stderr=logfile)
+    if not dry_run:
+        run = subprocess.Popen(scancommand,stdout=logfile,stderr=logfile)
+        out,err = run.communicate()
+        return out,err,run
+    else:
+        display('Dry run. Not running scancommand.')
+
     #except:
         #display('Error running scancommand',logfile=logfile)
 
-    out,err = run.communicate()
 
-    return out,err,run
     # old code, can be deleted. if not run in batch mode, scanimage output must be redirected to stdout.
     # runs scanimage in single page mode with its output going to stdout , which is then redirected to outputfile
     #outfile_handle = open(outputfile,'w')

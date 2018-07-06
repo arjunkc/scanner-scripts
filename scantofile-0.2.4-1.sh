@@ -48,12 +48,13 @@ mkdir -p $SAVETO
 scriptname=$(basename "$0")
 basedir=$(dirname "$0")
 if [[ -z $LOGDIR ]]; then
-    # $0 refers to the script name
+    # if LOGDIR is not set, choose a default
+    mkdir -p ${HOME}/brscan
     logfile=${HOME}"/brscan/$scriptname.log"
 else
+    mkdir -p $LOGDIR
     logfile=${LOGDIR}"/$scriptname.log"
 fi
-mkdir -p $LOGDIR
 touch ${logfile}
 
 # for debugging purposes, output arguments

@@ -40,6 +40,8 @@ def parse_arguments():
     # requires exactly one argument, but this not set by nargs
     # duplextype takes auto and manual. 
     parser.add_argument('--duplextype',action='store',default='auto')
+    # it's not a dry-run by default.
+    parser.add_argument('--dry-run',action='store_true',default=False)
     args,unknown = parser.parse_known_args()
 
     # process options.
@@ -117,7 +119,7 @@ match_string_part = args.outputdir + '/' + args.prefix+'-[0-9]+-'+part+r'-([0-9]
 if debug:
     display('Look for scanned files of the following form (regex): ', match_string_part)
 
-if args.duplex and args.duplextype == 'manual' 
+if args.duplex and args.duplextype == 'manual':
     # then run complex double sided scanning routines.
 
     # find all files in directory
@@ -141,12 +143,12 @@ if args.duplex and args.duplextype == 'manual'
     # run scanner command
     outputfile = args.outputdir + '/' + args.prefix + '-' + str(args.timenow) + '-part-%03d.pnm'
     if output == 'run_odd':
-        [out,err,processhandle] = run_scancommand(args.device_name,outputfile,width=args.width,height=args.height,logfile=logfile_handle,debug=debug,mode=args.mode,resolution=args.resolution,batch=True,batch_start='1',batch_increment='2',source=args.source)
+        [out,err,processhandle] = run_scancommand(args.device_name,outputfile,width=args.width,height=args.height,logfile=logfile_handle,debug=debug,mode=args.mode,resolution=args.resolution,batch=True,batch_start='1',batch_increment='2',source=args.source,dry_run=args.dry_run)
     else: # output == 'run_even'if
         # if no even files found within 5 minutes of each other
         # really these arguments to scancommand should not do type conversion for
         # the numerican arguments. to fix.
-        [out,err,processhandle] = run_scancommand(args.device_name,outputfile,width=args.width,height=args.height,logfile=logfile_handle,debug=debug,mode=args.mode,resolution=args.resolution,batch=True,batch_start=str(maxpart+1),batch_increment='-2')
+        [out,err,processhandle] = run_scancommand(args.device_name,outputfile,width=args.width,height=args.height,logfile=logfile_handle,debug=debug,mode=args.mode,resolution=args.resolution,batch=True,batch_start=str(maxpart+1),batch_increment='-2',dry_run=args.dry_run)
 
     # convert files to pdf
     # implement wait limit here. use subprocess.wait for a process to finish.
@@ -197,7 +199,7 @@ else: # simply run single sided scanning routine
     outputfile = args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-%03d.pnm'
 
     # run scan command
-    [out,err,processhandle] = run_scancommand(args.device_name,outputfile,width=args.width,height=args.height,logfile=logfile_handle,debug=debug,mode=args.mode,resolution=args.resolution,batch_start='1',batch_increment='1',source=args.source)
+    [out,err,processhandle] = run_scancommand(args.device_name,outputfile,width=args.width,height=args.height,logfile=logfile_handle,debug=debug,mode=args.mode,resolution=args.resolution,batch_start='1',batch_increment='1',source=args.source,dry_run=args.dry_run)
 
     # see if files have been created.
     os.system('sleep 3')

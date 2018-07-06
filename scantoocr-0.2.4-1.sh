@@ -46,14 +46,17 @@ mkdir -p $SAVETO
 
 # LOGFILE
 scriptname=$(basename "$0")
+# $0 refers to the script name
 basedir=$(dirname "$0")
+
 if [[ -z $LOGDIR ]]; then
-    # $0 refers to the script name
+    # if LOGDIR is not set, choose a default
+    mkdir -p ${HOME}/brscan
     logfile=${HOME}"/brscan/$scriptname.log"
 else
+    mkdir -p $LOGDIR
     logfile=${LOGDIR}"/$scriptname.log"
 fi
-mkdir -p $LOGDIR
 touch ${logfile}
 
 # for debugging purposes, output arguments
@@ -63,7 +66,7 @@ set >> ${logfile}
 echo $LOGDIR >> ${logfile}
 
 fileprefix='scantoocr'
-${basedir}/double-sided-scan.py \
+${basedir}/single-sided-scan.py \
     --outputdir ${SAVETO} \
     --logdir ${LOGDIR} \
     --prefix ${fileprefix} \
@@ -74,6 +77,7 @@ ${basedir}/double-sided-scan.py \
     --width $width \
     --mode "$mode" \
     --source "$docsource" \
-    --duplex "manual"
+    --duplex "manual" \
+    --dry-run
     >> $logfile 2>&1 
 
