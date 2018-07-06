@@ -1,19 +1,107 @@
 # README
 
-Contains my scanning scripts for my Brother DCP-L2450DW scanner. It has an ADF
-and a Flatbed, but the ADF does not support duplex scanning. My scan scripts
-allow me to do the following
+## Introduction
+
+This is a work in progress, and does not work for anyone other than me. Should be ready in a few weeks though.
+
+These are linux enhancement scripts to Brother's brscan-skey scripts. Consumer brother scanners like the 
+
+    DCP-L2540DW
+    MFC-L2740DW
+
+Brother's linux drivers include two packages:
+
+    brscan#
+    brscan-skey
+
+where `#` is a number (currently 4). The `brscan#` package contains the binary driver for the scanner and various ini files. The brscan-skey package contains a unix binary daemon that waits for the scanner to send it a message, and a bunch of bash/sh scripts that create scanned files on your PC.
+
+These scripts are very basic, and do not do many of the things I need to have an effective network or USB scanner for my work. In particular, they do not work too well with an (Automatic Document Feeder) ADF.
+
+My enhanced scripts have the following features:
+
+1.  Support **duplex** scanning for Brother scanners, *whether or not they support duplex scanning*. That is, if you have a single sided scanning ADF, you feed the facing pages first, then flip the scanned pile over, and scan the reverse pages. The python scripts do the automated numbering and produce a single pdf document. The scripts also support scanners that do have duplex scanning ADFs.
+1.  Written in python, accept many options. 
+1.  Can detect default devices automatically. 
+1.  They are a drop in replacement for the brother scripts, and eventually, will require minimal configuration.
+
+## Requirements
+I have tested it on python 3.5 and 3.6. Requires the debian brother package downloaded from the Brother website ( [example](http://support.brother.com/g/s/id/linux/en/before.html?c=us&lang=en&prod=dcpl2540dw_us_as&redirect=on#ds620)).
+
+1.  sane
+1.  Python 3
+1.  Imagemagick. For converting pnm files to pdf.
+1.  pdftk. For compiling the image files into one pdf.
+1.  bash. This is because I know bash better than sh.
+
+## Installation
+
+Download the scripts:
+
+    git clone https://github.com/arjunkc/scanner-scripts
+
+The default brother driver is installed to 
+
+    /opt/brother/scanner/brscan-skey/
+
+I assume that the basic utilities distributed by Brother work for you.
+
+Then run
+
+    cp !(brscan-skey-0.2.4-0.cfg) /opt/brother/scanner/brscan-skey/script
+    cp !(brscan-skey-0.2.4-0.cfg) /opt/brother/scanner/brscan-skey/
+
+Edit the `brscan-skey-0.2.4-0.cfg` and change default options as necessary.
+
+Replace the files
+
+    /opt/brother/scanner/brscan-skey/script/scantofile-0.2.4-1.sh
+    /opt/brother/scanner/brscan-skey/script/scantoocr-0.2.4-1.sh
+    /opt/brother/scanner/brscan-skey/script/scantoimage-0.2.4-1.sh
+    /opt/brother/scanner/brscan-skey/script/scantoemail-0.2.4-1.sh
+
+Copy the files
+
+    scanutils.py
+    single-sided-scan.py
+
+to
+
+    /opt/brother/scanner/brscan-skey/script
+
+and importantly
+
+    brscan-skey-0.2.4-0.cfg
+
+to
+
+    /opt/brother/scanner/brscan-skey/brscan-skey-0.2.4-0.cfg
+
+
+
+## How it works
+
+When the "Scan" button on the Brother scanner is hit, the scanner sends out a message that is caught by the brscan-skey.
+
+<!-- Contains my scanning scripts for my Brother DCP-L2540DW scanner. It has an ADF -->
+<!-- and a Flatbed, but the ADF does not support duplex scanning. My scan scripts -->
+<!-- allow me to do the following -->
 
 1.  `brscan-skey-0.2.4-0.cfg` This has to be copied to this precise directory:
     
     /opt/brother/scanner/brscan-skey/
 
-    It tells the brscan-skey utility to call bash instead of sh. sh throws errors, and I don't really care enough to debug it.
+    It tells the brscan-skey utility to call bash instead of sh, and it also has a bunch of new environment variables that can be used to control duplex scanning. 
 
+1.  `single-sided-scan.py`. This has the main python scripts that scan and convert to pdf. Called by `scantofile.sh`
+1.  `double-sided-scan.py`. This is called by scantoocr.sh and has the weird
+    timestamp checking stuff.
+1.  `scanutils.py`. This is a python module that has a bunch of useful functions
+    for `double-sided-scan.py`. 
 1.  `scantofile.sh` A simple scanning utility. They're based on the scripts
     distributed by Brother and are called by the brscan-skey utility when it
     detects the scan button being pressed on the scanner. It scans a file,
-    writes it to my directory, and converts it to a pdf.
+    writes it to my directory, and converts it to a pdf. It is simply a wrapper for single-sided-scan.py with the appropriate options.
 1.  `scantoocr.sh` A more elaborate scanning utility that allows me to first
     scan all the odd pages of a document using the ADF, and then scans all the
     even sides. It calls a python script double-sided-scan.py that can detects
@@ -32,26 +120,35 @@ allow me to do the following
     to continue. I needed to create this since scanimage's `--batch-prompt`
     option does not appear to work correctly with Brother's scanners. It is
     related to this [bug report](http://lists.alioth.debian.org/pipermail/sane-devel/2016-May/034587.html).
-1.  `double-sided-scan.py`. This is called by scantoocr.sh and has the weird
-    timestamp checking stuff.
-1.  `scanutils.py`. This is a python module that has a bunch of useful functions
-    for `double-sided-scan.py`. 
 1.  `scantoemail.sh`. This is the standard Brother scanner utility. I think I
     will turn this into a single sided scanning script from the ADF eventually.
 
 # TODO
 
-1.      Integrate double-sided-scan.py functionality into a single file. Has to check if device supports duplex mode. If it doesn't it will run the double-sided functionality that asks you to scan things twice.
-1.      display should see if a global logfile variable has been set and its writeable. If not, it should just print to screen.
-1.      ~~To test single-sided-scan.py after going through the code.~~ Jul 04 2018 Seems to be working, as far as I can tell from the command line. To test from scanner directly.
-1.      ~~Add argparse functionality. Working on this on Jul 03 2018. Still working, updated `run_scancommand.`~~
-1.      Create a new thinkpad git branch. Then you can merge things if necessary.
-1.      ~~Install the newest version of brscan-skey and see if it passes along information about duplex scanning.~~ There are scripts that automatically create the files. I would have to see it work, but I don't really see it working. You can only scan from the flatbed, it seems, and it only creates single files, no batch mode. I should add this to the main section of the readme. I tested the basic scripts from brother. The scantofile script is automatically generated, and it does not seem to capture the "double" sided option at all.
-1.      Have to fix the logfile inside single-sided-scan.py. Currently it writes to a fixed /home/arjun directory. I should make this write to $HOME or something. I think it fails now if the logfile does not exist.
-1.	Have to allow a directory argument to `run_chown`. Currently its being called by `convert_to_pdf` as well.
-1.	Have to fix single-sided-scan.py so that it accounts for permissions properly. 
+1.  Remove my `convert-compress-delete` command, or simply add it to the scripts and run it for the time being.
+1.  Change logdir option to logfile. Make logging a little bit better.
+1.  Add an installation section to the README file.
+1.  Move back to sh for more portability. Is this really necessary?
+1.  Have to modify the chown mechanism. I can just add this functionality. The unix way is to not do this. But it's more convenient for me if it does, so I'm going to do it.
+1.  ~~Have to fix the logfile inside single-sided-scan.py. Currently it writes to a fixed /home/arjun directory. I should make this write to $HOME or something. I think it fails now if the logfile does not exist.~~
+1.  Have to allow a directory argument to `run_chown`. Currently its being called by `convert_to_pdf` as well.
+1.  Have to fix single-sided-scan.py so that it accounts for permissions properly. 
+1.  ~~Create a new thinkpad git branch. Then you can merge things if necessary.~~ decided not to have a new git branch. Should really use .gitattributes to run scripts that customize the configuration file.
+1.  ~~Integrate double-sided-scan.py functionality into a single file. Has to check if device supports duplex mode. If it doesn't it will run the double-sided functionality that asks you to scan things twice.~~
+1.  display should see if a global logfile variable has been set and its writeable. If not, it should just print to screen.
+1.  ~~To test single-sided-scan.py after going through the code.~~ Jul 04 2018 Seems to be working, as far as I can tell from the command line. To test from scanner directly.
+1.  ~~Add argparse functionality. Working on this on Jul 03 2018. Still working, updated `run_scancommand.`~~
+1.  ~~Install the newest version of brscan-skey and see if it passes along information about duplex scanning.~~ There are scripts that automatically create the files. I would have to see it work, but I don't really see it working. You can only scan from the flatbed, it seems, and it only creates single files, no batch mode. I should add this to the main section of the readme. I tested the basic scripts from brother. The scantofile script is automatically generated, and it does not seem to capture the "double" sided option at all.
 
 # Notes
+
+Jul 06 2018 Works on thinkpad now. 
+
+Jul 06 2018 Should change display mechanism. By default display should display to stdout, and the `--logdir` option should be changed to logfile. 
+
+If the logfile is set, it should output to logfile. If not, it should make some temporary logfile, and it should send things there. 
+
+If `--debug` is true, then display should output to stdout as well.
 
 Jul 04 2018 It seems that the `--source` option you obtain using
 

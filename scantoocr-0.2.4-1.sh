@@ -4,7 +4,7 @@ set +o noclobber
 #   Edited by Arjun Krishnan Apr 03 2017
 #
 #   $1 = scanner device
-#
+#   $2 = brother internal
 #   
 #       100,200,300,400,600
 #
@@ -17,9 +17,8 @@ set +o noclobber
 
 resolution=300
 
-if [ -z "$1" ]; then
-    device='brother4:bus3;dev7'
-else
+if [ -n "$1" ]; then
+    # if first argument is not empty
     device=$1
 fi
 
@@ -78,6 +77,6 @@ ${basedir}/single-sided-scan.py \
     --mode "$mode" \
     --source "$docsource" \
     --duplex "manual" \
-    --dry-run
+    #--dry-run \
     >> $logfile 2>&1 
 
