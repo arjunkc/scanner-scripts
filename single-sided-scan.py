@@ -12,8 +12,8 @@ ownedby = 'arjun:szhao'
 timeoffset = 5*60 # in seconds
 as_script = False
 debug = True 
-default_logdir = os.environ.get('HOME') + r'brscan/'
-default_outdir = os.environ.get('HOME') + r'brscan/'
+default_logdir = '/tmp' + r'brscan/'
+default_outdir = '/tmp' + r'brscan/'
 waitlimit = 300 # a limit for waiting to fix errors
 today = datetime.date.today().isoformat() 
 
