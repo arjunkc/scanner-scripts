@@ -164,7 +164,7 @@ if args.duplex and args.duplextype == 'manual':
             display("number_scanned: " + str(number_scanned),logfile=logfile_handle)
 
         # wait for a time proportional to the number scanned
-        convert_to_pdf(directory=args.outputdir,outputtype='pdf',wait=int(number_scanned/3.0),debug=debug,logfile=logfile_handle)
+        convert_to_pdf(filelist,directory=args.outputdir,outputtype='pdf',wait=int(number_scanned/3.0),debug=debug,logfile=logfile_handle)
 
         # find newly converted files
         newfiles = filelist('ls ' + args.outputdir +  '/' + args.prefix + '-' + str(args.timenow) + '-part-*.pdf')

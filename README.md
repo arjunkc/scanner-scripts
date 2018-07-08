@@ -125,6 +125,8 @@ When the "Scan" button on the Brother scanner is hit, the scanner sends out a me
 
 # TODO
 
+1.  To test `convert_to_pdf`
+1.  Can you replace the `wait` statements by polling the subprocess handle, run.wait() or something? The wait quantities can then be limits. Maybe run.communicate() does the same thing.
 1.  Remove my `convert-compress-delete` command, or simply add it to the scripts and run it for the time being.
 1.  Change logdir option to logfile. Make logging a little bit better.
 1.  Add an installation section to the README file.

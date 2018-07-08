@@ -180,18 +180,48 @@ def run_scancommand(device_name,outputfile,width=None,height=None,mode=None,reso
     #outfile_handle = open(outputfile,'w')
     #run = subprocess.Popen(scancommand,stdout=outfile_handle,stderr=logfile)
 
-def convert_to_pdf(outputdir='/home/arjun/brscan/documents/',outputtype='pdf',wait=10,debug=False,logfile=None):
+def convert_to_pdf(filelist,outputdir='/home/arjun/brscan/documents/',outputtype='pdf',wait=2,debug=False,logfile=None,compress=False,img2pdfopts=['--pagesize','Letter','--border','1in:1in']):
+    """
+    Requires img2pdf
+
+    Send files will full path name. Will convert to pdf using imagemagick convert and img2pdf. Has a redundant outputtype option.
+    
+    Uses the default option img2pdf
+
+        '--pagesize','Letter','--border','1in:1in'
+
+    Has an unimplemented compress option. If true, I want convert to convert it to jpg before converting to pdf.
+
+    Assumes file has an extension of the form file.xxx
+
+    """
+
     print("Converting raw scanned files to " + outputtype)
     os.system('sleep ' + str(wait))
     cmd = ['/home/arjun/bin/misc_scripts/convert-compress-delete','-t',"pdf",'-d',outputdir,'-y']
-    os.system('chown arjun:szhao ' + outputdir + '*')
-    run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
-    if debug:
-        out,err = run.communicate()
-        display("conversion command: ", cmd,logfile=logfile)
-        display(out,err,logfile=logfile)
-    # wait for process to return
-    run.wait()
+    #os.system('chown arjun:szhao ' + outputdir + '*')
+    for f in filelist:
+        if os.path.exists(f):
+            if compress:
+                # compress file to jpg
+                jpgf = re.sub(r'\....$',r'.jpg',f)
+                cmd = ['convert','-quality','90','-density','300',f,jpgf]
+                if debug:
+                    print(cmd)
+                run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
+                f = jpgf
+
+            pdff = os.path.dirname(f) + re.sub(r'\....$',r'.pdf',os.path.basename(f))
+            cmd = ['img2pdf','--pagesize','Letter','--border','1in:1in','-o',pdff,f]
+            if debug:
+                print(cmd)
+            run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
+            if debug:
+                out,err = run.communicate()
+                display("conversion command: ", cmd,logfile=logfile)
+                display(out,err,logfile=logfile)
+            # wait for process to return
+            run.wait()
 
 def run_pdftk(filestopdftk,outputfile,debug=False,logfile=None):
     print("Compiling pdf file using pdftk")
