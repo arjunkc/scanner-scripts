@@ -3,7 +3,7 @@
 # To be imported as a module
 
 import os,sys,re,time,datetime,subprocess
-import argparse
+import argparse,traceback
 
 # define a function that takes in a list of files, and returns a list of files with timestamps that are within timeoffset 
 
@@ -180,9 +180,9 @@ def run_scancommand(device_name,outputfile,width=None,height=None,mode=None,reso
     #outfile_handle = open(outputfile,'w')
     #run = subprocess.Popen(scancommand,stdout=outfile_handle,stderr=logfile)
 
-def convert_to_pdf(filelist,outputdir='/home/arjun/brscan/documents/',outputtype='pdf',wait=2,debug=False,logfile=None,compress=False,img2pdfopts=['--pagesize','Letter','--border','1in:1in']):
+def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=False,img2pdfopts=['--pagesize','Letter','--border','1in:1in']):
     """
-    Requires img2pdf
+    Requires img2pdf and convert from imagemagick
 
     Send files will full path name. Will convert to pdf using imagemagick convert and img2pdf. Has a redundant outputtype option.
     
@@ -194,12 +194,17 @@ def convert_to_pdf(filelist,outputdir='/home/arjun/brscan/documents/',outputtype
 
     Assumes file has an extension of the form file.xxx
 
+    The outputdir option is unused, but could be used to specify alternative output folders if necessary in the future.
+
+    The outputtype option is not used either, since I know I'm making a pdf using img2pdf, a program
+
     """
 
     print("Converting raw scanned files to " + outputtype)
     os.system('sleep ' + str(wait))
-    cmd = ['/home/arjun/bin/misc_scripts/convert-compress-delete','-t',"pdf",'-d',outputdir,'-y']
+    #cmd = ['/home/arjun/bin/misc_scripts/convert-compress-delete','-t',"pdf",'-d',outputdir,'-y']
     #os.system('chown arjun:szhao ' + outputdir + '*')
+    converted = []
     for f in filelist:
         if os.path.exists(f):
             if compress:
@@ -208,20 +213,34 @@ def convert_to_pdf(filelist,outputdir='/home/arjun/brscan/documents/',outputtype
                 cmd = ['convert','-quality','90','-density','300',f,jpgf]
                 if debug:
                     print(cmd)
-                run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
+                try:
+                    run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
+                except:
+                    display('Error compressing to jpg using convert.',logfile=logfile)
+                    if debug:
+                        traceback.print_exc(file=sys.stdout)
                 f = jpgf
 
             pdff = os.path.dirname(f) + re.sub(r'\....$',r'.pdf',os.path.basename(f))
             cmd = ['img2pdf','--pagesize','Letter','--border','1in:1in','-o',pdff,f]
             if debug:
                 print(cmd)
-            run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
+
+            try:
+                run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
+            except:
+                display('Error creating pdf using img2pdf',logfile=logfile)
+                if debug:
+                    traceback.print_exc(file=sys.stdout)
             if debug:
-                out,err = run.communicate()
                 display("conversion command: ", cmd,logfile=logfile)
-                display(out,err,logfile=logfile)
+
+            # add converted file to filelist
+            converted = converted + [pdff]
             # wait for process to return
             run.wait()
+
+    return converted
 
 def run_pdftk(filestopdftk,outputfile,debug=False,logfile=None):
     print("Compiling pdf file using pdftk")

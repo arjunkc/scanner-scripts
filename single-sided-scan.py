@@ -163,18 +163,25 @@ if args.duplex and args.duplextype == 'manual':
         if debug:
             display("number_scanned: " + str(number_scanned),logfile=logfile_handle)
 
-        # wait for a time proportional to the number scanned
-        convert_to_pdf(filelist,directory=args.outputdir,outputtype='pdf',wait=int(number_scanned/3.0),debug=debug,logfile=logfile_handle)
+        # wait for a specified time before trying to convert each file.
+        newfiles = convert_to_pdf(filelist,wait=0,debug=debug,logfile=logfile_handle)
 
         # find newly converted files
-        newfiles = filelist('ls ' + args.outputdir +  '/' + args.prefix + '-' + str(args.timenow) + '-part-*.pdf')
+        # newfiles = filelist('ls ' + args.outputdir +  '/' + args.prefix + '-' + str(args.timenow) + '-part-*.pdf')
 
         # make a filelist and output filename to pdftk
         if output == 'run_odd':
+            # compile the odd pages into a single pdf
             compiled_pdf_filename = args.outputdir +  '/' + args.prefix + '-' + today + '-' + str(int(time.time())) + '-odd.pdf'
             filestopdftk = newfiles
+
+            # write filelist to outputdir
+            # to be used for new odd/even mechanism in the future.
+            tf = open(args.outputdir + '/.scantoocr-odd-filelist','w')
+            tf.write(str(newfiles))
         elif output == 'run_even':
            # if scanned even parts, and hence max part number is bigger than 1
+           # even files are automatically numbered in reverse by the scancommand.
            oldfiles = [x[2] for x in filesclose]
            oldfiles.sort() #newfiles should be sorted already
            # new files have been ensured to be in sorted order.
@@ -189,14 +196,14 @@ if args.duplex and args.duplextype == 'manual':
         run_pdftk(filestopdftk,compiled_pdf_filename,debug=debug,logfile=logfile_handle)
 
         # make the files owned by certain somebody
-        if not ownedby:
+        if ownedby:
             subprocess.Popen(['chown',ownedby,compiled_pdf_filename])
 
     #close logfile
     logfile_handle.close() 
 
 
-else: # simply run single sided scanning routine
+else: # if not (double sided and manual double scanning) simply run single sided scanning routine
     # in case we have args.duplex and args.duplextype = 'manual'
     # make outputfile
     outputfile = args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-%03d.pnm'
@@ -216,25 +223,31 @@ else: # simply run single sided scanning routine
 
         # find number of files by scanning the part number of the last file.
         # assumes that the list is sorted.
-        if len(files) > 0:
-            number_scanned = file_part(files[-1],match_string_part)
-        else:
-            number_scanned = 0
+        # why is len(files) not sufficient? To rewrite this section.
+        try:
+            if len(files) > 0:
+                number_scanned = file_part(files[-1],match_string_part)
+            else:
+                number_scanned = 0
+        except:
+            display("Error determining number of files scanned")
 
         if debug:
             display("number_scanned: " + str(number_scanned),logfile=logfile_handle)
 
         if number_scanned > 0:
             # wait for a time proportional to the number scanned
-            convert_to_pdf(outputdir=args.outputdir,outputtype='pdf',wait=int(number_scanned/3.0),debug=debug,logfile=logfile_handle)
+            # waiting is builtin to convert_to_pdf
+            convertedfiles = convert_to_pdf(files,wait=0,debug=debug,logfile=logfile_handle)
 
             # find newly converted files
-            convertedfiles = filelist('ls ' + args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-*.pdf')
+            #convertedfiles = filelist('ls ' + args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-*.pdf')
 
             # make a filelist and output filename to pdftk
             compiled_pdf_filename = args.outputdir + '/' + args.prefix + '-' + today + '-' + str(int(time.time())) + '.pdf'
 
             run_pdftk(convertedfiles,compiled_pdf_filename,debug=debug,logfile=logfile_handle)
 
-            # make the files owned by a certain somebody
-            run_chown(ownedby,compiled_pdf_filename,debug=debug,logfile=logfile_handle)
+        # make the files owned by a certain somebody
+        if ownedby:
+            subprocess.Popen(['chown',ownedby,compiled_pdf_filename])
