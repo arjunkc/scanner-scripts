@@ -13,6 +13,9 @@ def Usage(as_script):
         sys.stdout.write("\t" + sys.argv[0] + "<outputdir name> <fileprefix=brscan> <time in seconds from epoch> <etc>\n")
         sys.stdout.flush()
 
+global debug,logfile
+
+#def logprint(*s,logfile=None,debug=False):
 def logprint(*s):
     # display string with the correct function.
     '''
@@ -25,23 +28,21 @@ def logprint(*s):
     global logfile,debug
 
     try:
-        logfile
-    except:
-        logfile=None
-        print('Cannot find global logfile variable; set to ',logfile)
-
-    try:
-        debug
-    except:
-        debug=False
-
-    if logfile:
-        print(*s,file=logfile)
-        logfile.flush()
-        if debug:
+        # will throw exception is logfile not found globally, I guess
+        if logfile:
+            print('Writing to logfile',logfile)
+            print(*s,file=logfile)
+            logfile.flush()
+            if debug:
+                print(*s)
+        else:
+            print('logfile is none')
+            # if logfile is None, simply output to stdout
             print(*s)
-    else:
+    except:
+        # if something fails, simply output to stdout
         print(*s)
+        traceback.print_exc(file=sys.stdout)
         
 
 # file name handling functions
