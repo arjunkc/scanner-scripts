@@ -125,7 +125,8 @@ When the "Scan" button on the Brother scanner is hit, the scanner sends out a me
 
 # TODO
 
-1.  To test `convert_to_pdf`
+1.  To move to different mechanism for manual duplex scanning.
+1.  To test `convert_to_pdf`. Seems to be working.
 1.  Should change behaviour just a little bit. It should write a filelist of odd files to the directory. If it finds this file, then it should run the `run_even` routine, and then delete the filelist of oddfiles. As a backup, it should also save the `even` files as a separate file. So if you run scantoocr by mistake, you simply run it again, and it will delete the odd filelist, ensuring that you can rerun scantoocr right away. But the problem is that the `run_even` command will have the pages in reverse order. I suppose this can be fixed with a pdftk command manually. Perhaps to "clear the odd files scanned by mistake" you can have a check on the even side that does the following: if even files not equal to the number of odd files, then you delete the odd filelist, and don't create a compiled pdf output. 
 1.  Perhaps it's ok to have the brscan daemon run by a normal user. In this case, you don't need to run chown. Then you can remove the chown script from your thingy. I don't think it will make it group writeable though, since the commands mgiht not respect the ACLs. So shirley might not be able to organize and delete the scans.
 1.  Can you replace the `wait` statements by polling the subprocess handle, run.wait() or something? The wait quantities can then be limits. Maybe run.communicate() does the same thing.
