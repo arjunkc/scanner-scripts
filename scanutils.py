@@ -28,6 +28,7 @@ def logprint(*s):
         logfile
     except:
         logfile=None
+        print('Cannot find global logfile variable; set to ',logfile)
 
     try:
         debug
@@ -71,7 +72,7 @@ def files_within_timeoffset(l,match_string_time,match_string_part,timenow,timeof
         partno = file_part(x,match_string_part)
         if debug and xtime!= None:
             logprint('xtime = ' + str(xtime) + '. part number = ' + str(partno) + '\n')
-            #logprint('type xtime = ' + str(type(xtime)) + '. type timenow = ' + str(type(timenow)) + '. type timeoffset = ' + str(type(timeoffset)) + '\n')
+            logprint('type xtime = ' + str(type(xtime)) + '. type timenow = ' + str(type(timenow)) + '. type timeoffset = ' + str(type(timeoffset)) + '\n')
         if xtime != None:
             if abs(xtime - timenow) <= timeoffset:
                 if debug:
@@ -242,8 +243,8 @@ def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=False,img2p
                         traceback.print_exc(file=sys.stdout)
                 f = jpgf
 
-            pdff = os.path.dirname(f) + re.sub(r'\....$',r'.pdf',os.path.basename(f))
-            cmd = ['img2pdf','--pagesize','Letter','--border','1in:1in','-o',pdff,f]
+            pdff = re.sub(r'\....$',r'.pdf',f)
+            cmd = ['img2pdf'] + img2pdfopts + ['-o',pdff,f]
             if debug:
                 print(cmd)
 

@@ -138,7 +138,7 @@ if args.duplex == 'manual':
     # files close will contain a list of tuples containing (filetime, part number, filename)
     filesclose = files_within_timeoffset(files,match_string_time,match_string_part,args.timenow,timeoffset,debug=debug)
     if debug:
-        logprint('files found = ',files,'filesclose = ',filesclose,'match_string_part = ',match_string_part)
+        logprint('files found = ',files,'filesclose = ',filesclose,'match_string_part = ',match_string_part,'match_string_time = ',match_string_time)
 
     # determine whether to run odd or even; if even, also find the  max part number of the file. 
     (output,maxpart) = oddoreven_and_maxpart_number(filesclose,debug=debug)
@@ -177,7 +177,7 @@ if args.duplex == 'manual':
             logprint("number_scanned: " + str(number_scanned))
 
         # wait for a specified time before trying to convert each file.
-        newfiles = convert_to_pdf(filelist,wait=0,debug=debug,logfile=logfile)
+        newfiles = convert_to_pdf(files,wait=0,debug=debug,logfile=logfile)
 
         # find newly converted files
         # newfiles = filelist('ls ' + args.outputdir +  '/' + args.prefix + '-' + str(args.timenow) + '-part-*.pdf')

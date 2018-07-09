@@ -27,7 +27,6 @@ width=215.88
 # the height has to be set. its now 11in = 279.4 and 11.4in = 290. Setting the height higher does not work on the ADF, but does work on the flatbet
 height=279.4
 mode="Black & White"
-docsource="Automatic Document Feeder(left aligned,Duplex)"
 
 epochnow=$(date '+%s')
 
@@ -58,6 +57,16 @@ else
 fi
 touch ${logfile}
 
+# if DUPLEXTYPE is not set
+if [[ -z $DUPLEXTYPE ]]; then
+    DUPLEXTYPE='manual'
+fi
+
+# if DUPLEXSOURCE is not set
+if [[ -z $DUPLEXSOURCE ]]; then
+    DUPLEXSOURCE="Automatic Document Feeder(left aligned,Duplex)"
+fi
+
 # for debugging purposes, output arguments
 echo $* >> ${logfile}
 # export environment to logfile
@@ -75,8 +84,8 @@ ${basedir}/single-sided-scan.py \
     --height $height \
     --width $width \
     --mode "$mode" \
-    --source "$docsource" \
-    --duplex "auto" \
+    --source "$DUPLEXSOURCE" \
+    --duplex "manual" \
     #--dry-run \
     #>> $logfile 2>&1 
 
