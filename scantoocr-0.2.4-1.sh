@@ -30,8 +30,25 @@ mode="Black & White"
 
 epochnow=$(date '+%s')
 
+# LOGFILE
+scriptname=$(basename "$0")
+# $0 refers to the script name
+basedir=$(readlink -f "$0" | xargs dirname)
+
+# change to directory of script
+cd ${basedir}
+echo "basedir = $basedir" 
+
 # ugly hack that makes environment variables set available
-source /opt/brother/scanner/brscan-skey/brscan-skey-*.cfg
+cfgfile=$(ls ../brscan-skey-*.cfg)
+echo "cfgfile = $cfgfile"
+if [[ -r "$cfgfile" ]]; then
+    echo "Found cfgfile"
+    source "$cfgfile"
+    echo "environment after processing cfgfile"
+    env
+fi
+
 
 # SAVETO DIRECTORY
 if [[ -z "$SAVETO" ]];  then
@@ -41,11 +58,6 @@ else
 fi
 
 mkdir -p $SAVETO
-
-# LOGFILE
-scriptname=$(basename "$0")
-# $0 refers to the script name
-basedir=$(dirname "$0")
 
 if [[ -z $LOGDIR ]]; then
     # if LOGDIR is not set, choose a default
@@ -68,10 +80,24 @@ if [[ -z $DUPLEXSOURCE ]]; then
 fi
 
 # for debugging purposes, output arguments
-echo $* >> ${logfile}
+echo "options after processing." >> ${logfile}
+echo "$*" >> ${logfile}
 # export environment to logfile
 set >> ${logfile}
 echo $LOGDIR >> ${logfile}
+
+echo "${basedir}/single-sided-scan.py \
+    --outputdir ${SAVETO} \
+    --logdir ${LOGDIR} \
+    --prefix ${fileprefix} \
+    --timenow ${epochnow} \
+    --device-name ${device} \
+    --resolution ${resolution} \
+    --height $height \
+    --width $width \
+    --mode "$mode" \
+    --source "$DUPLEXSOURCE" \
+    --duplex "$DUPLEXTYPE"" 
 
 fileprefix='scantoocr'
 ${basedir}/single-sided-scan.py \
@@ -85,7 +111,7 @@ ${basedir}/single-sided-scan.py \
     --width $width \
     --mode "$mode" \
     --source "$DUPLEXSOURCE" \
-    --duplex "manual" \
+    --duplex "$DUPLEXTYPE" 
     #--dry-run \
     #>> $logfile 2>&1 
 

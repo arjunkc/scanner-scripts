@@ -41,8 +41,9 @@ def logprint(*s):
             print(*s)
     except:
         # if something fails, simply output to stdout
+        print("logfile environment variable not set")
         print(*s)
-        traceback.print_exc(file=sys.stdout)
+        #traceback.print_exc(file=sys.stdout)
         
 
 # file name handling functions

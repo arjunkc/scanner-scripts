@@ -2,12 +2,14 @@
 
 ## Introduction
 
-This is a work in progress, and does not work for anyone other than me. Should be ready in a few weeks though.
+This is a work in progress, but you can test them on your machine as long as you you have the required packages.
 
-These are linux enhancement scripts to Brother's brscan-skey scripts. Consumer brother scanners like the 
+These are linux enhancement scripts to Brother's brscan-skey scripts. I have tested these on consumer brother scanners like the 
 
-    DCP-L2540DW
-    MFC-L2740DW
+    DCP-L2540DW (no automatic duplex)
+    MFC-L2740DW (duplex automatic document feeder)
+
+I have tested these on Archlinux and Debian.
 
 Brother's linux drivers include two packages:
 
@@ -16,9 +18,11 @@ Brother's linux drivers include two packages:
 
 where `#` is a number (currently 4). The `brscan#` package contains the binary driver for the scanner and various ini files. The brscan-skey package contains a unix binary daemon that waits for the scanner to send it a message, and a bunch of bash/sh scripts that create scanned files on your PC.
 
-These scripts are very basic, and do not do many of the things I need to have an effective network or USB scanner for my work. In particular, they do not work too well with an (Automatic Document Feeder) ADF.
+Brother's scripts are very basic, and do not do many of the things I need to have an effective network or USB scanner for my work. In particular, they do not work too well with an (Automatic Document Feeder) ADF. 
 
-My enhanced scripts have the following features:
+**The most important feature for me is to be able to walk to the printer, throw a document in the ADF and hit scan. A pdf of this document should automatically be saved on my computer.**
+
+This is what my enhanced scripts aim to do. They have the following features:
 
 1.  Support **duplex** scanning for Brother scanners, *whether or not they support duplex scanning*. That is, if you have a single sided scanning ADF, you feed the facing pages first, then flip the scanned pile over, and scan the reverse pages. The python scripts do the automated numbering and produce a single pdf document. The scripts also support scanners that do have duplex scanning ADFs.
 1.  Written in python, accept many options. 
@@ -30,7 +34,8 @@ I have tested it on python 3.5 and 3.6. Requires the debian brother package down
 
 1.  sane
 1.  Python 3
-1.  Imagemagick. For converting pnm files to pdf.
+1.  Imagemagick. For converting pnm files to pdf. 
+1.  img2pdf seems to work best for embedding jpgs in pdfs.
 1.  pdftk. For compiling the image files into one pdf.
 1.  bash. This is because I know bash better than sh.
 
@@ -44,7 +49,7 @@ The default brother driver is installed to
 
     /opt/brother/scanner/brscan-skey/
 
-I assume that the basic utilities distributed by Brother work for you.
+I assume that the basic utilities distributed by Brother work for you. This is an important step to get working first.
 
 Then run
 
@@ -125,19 +130,19 @@ When the "Scan" button on the Brother scanner is hit, the scanner sends out a me
 
 # TODO
 
-1.  To move to different mechanism for manual duplex scanning.
-1.  To test `convert_to_pdf`. Seems to be working.
-1.  Should change behaviour just a little bit. It should write a filelist of odd files to the directory. If it finds this file, then it should run the `run_even` routine, and then delete the filelist of oddfiles. As a backup, it should also save the `even` files as a separate file. So if you run scantoocr by mistake, you simply run it again, and it will delete the odd filelist, ensuring that you can rerun scantoocr right away. But the problem is that the `run_even` command will have the pages in reverse order. I suppose this can be fixed with a pdftk command manually. Perhaps to "clear the odd files scanned by mistake" you can have a check on the even side that does the following: if even files not equal to the number of odd files, then you delete the odd filelist, and don't create a compiled pdf output. 
-1.  Perhaps it's ok to have the brscan daemon run by a normal user. In this case, you don't need to run chown. Then you can remove the chown script from your thingy. I don't think it will make it group writeable though, since the commands mgiht not respect the ACLs. So shirley might not be able to organize and delete the scans.
-1.  Can you replace the `wait` statements by polling the subprocess handle, run.wait() or something? The wait quantities can then be limits. Maybe run.communicate() does the same thing.
-1.  Remove my `convert-compress-delete` command, or simply add it to the scripts and run it for the time being.
+1.  Deal with permissions errors on the logfile.
 1.  Change logdir option to logfile. Make logging a little bit better.
+1.  To move to different mechanism for manual duplex scanning. Should change behaviour just a little bit. It should write a filelist of odd files to the directory. If it finds this file, then it should run the `run_even` routine, and then delete the filelist of oddfiles. As a backup, it should also save the `even` files as a separate file. So if you run scantoocr by mistake, you simply run it again, and it will delete the odd filelist, ensuring that you can rerun scantoocr right away. But the problem is that the `run_even` command will have the pages in reverse order. I suppose this can be fixed with a pdftk command manually. Perhaps to "clear the odd files scanned by mistake" you can have a check on the even side that does the following: if even files not equal to the number of odd files, then you delete the odd filelist, and don't create a compiled pdf output. 
 1.  Add an installation section to the README file.
 1.  Move back to sh for more portability. Is this really necessary?
 1.  Have to modify the chown mechanism. I can just add this functionality. The unix way is to not do this. But it's more convenient for me if it does, so I'm going to do it.
-1.  ~~Have to fix the logfile inside single-sided-scan.py. Currently it writes to a fixed /home/arjun directory. I should make this write to $HOME or something. I think it fails now if the logfile does not exist.~~
+1.  Perhaps it's ok to have the brscan daemon run by a normal user. In this case, you don't need to run chown. Then you can remove the chown script from your thingy. I don't think it will make it group writeable though, since the commands mgiht not respect the ACLs. So shirley might not be able to organize and delete the scans.
 1.  Have to allow a directory argument to `run_chown`. Currently its being called by `convert_to_pdf` as well.
 1.  Have to fix single-sided-scan.py so that it accounts for permissions properly. 
+1.  ~~Can you replace the `wait` statements by polling the subprocess handle, run.wait() or something? The wait quantities can then be limits. Maybe run.communicate() does the same thing.~~
+1.  ~~Remove my `convert-compress-delete` command, or simply add it to the scripts and run it for the time being.~~
+1.  ~~To test `convert_to_pdf`. Seems to be working.~~
+1.  ~~Have to fix the logfile inside single-sided-scan.py. Currently it writes to a fixed /home/arjun directory. I should make this write to $HOME or something. I think it fails now if the logfile does not exist.~~
 1.  ~~Create a new thinkpad git branch. Then you can merge things if necessary.~~ decided not to have a new git branch. Should really use .gitattributes to run scripts that customize the configuration file.
 1.  ~~Integrate double-sided-scan.py functionality into a single file. Has to check if device supports duplex mode. If it doesn't it will run the double-sided functionality that asks you to scan things twice.~~
 1.  display should see if a global logfile variable has been set and its writeable. If not, it should just print to screen.
