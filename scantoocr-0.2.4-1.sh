@@ -76,7 +76,7 @@ ${basedir}/single-sided-scan.py \
     --width $width \
     --mode "$mode" \
     --source "$docsource" \
-    --duplex "manual" \
+    --duplex "auto" \
     #--dry-run \
-    >> $logfile 2>&1 
+    #>> $logfile 2>&1 
 

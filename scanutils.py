@@ -13,13 +13,35 @@ def Usage(as_script):
         sys.stdout.write("\t" + sys.argv[0] + "<outputdir name> <fileprefix=brscan> <time in seconds from epoch> <etc>\n")
         sys.stdout.flush()
 
-def display(*s,logfile=None):
+def logprint(*s):
     # display string with the correct function.
-    if logfile==None:
-        print(*s)
-    else:
+    '''
+    prints to global variable defined by logfile
+    if not found prints to stdout
+
+    if debug is set, will always print to stdout
+    '''
+
+    global logfile,debug
+
+    try:
+        logfile
+    except:
+        logfile=None
+
+    try:
+        debug
+    except:
+        debug=False
+
+    if logfile:
         print(*s,file=logfile)
         logfile.flush()
+        if debug:
+            print(*s)
+    else:
+        print(*s)
+        
 
 # file name handling functions
 def file_time(filename,match_string_time):
@@ -48,12 +70,12 @@ def files_within_timeoffset(l,match_string_time,match_string_part,timenow,timeof
         xtime = file_time(x,match_string_time)
         partno = file_part(x,match_string_part)
         if debug and xtime!= None:
-            display('xtime = ' + str(xtime) + '. part number = ' + str(partno) + '\n')
-            #display('type xtime = ' + str(type(xtime)) + '. type timenow = ' + str(type(timenow)) + '. type timeoffset = ' + str(type(timeoffset)) + '\n')
+            logprint('xtime = ' + str(xtime) + '. part number = ' + str(partno) + '\n')
+            #logprint('type xtime = ' + str(type(xtime)) + '. type timenow = ' + str(type(timenow)) + '. type timeoffset = ' + str(type(timeoffset)) + '\n')
         if xtime != None:
             if abs(xtime - timenow) <= timeoffset:
                 if debug:
-                    display('match = ' +str((xtime,partno,x) ) )
+                    logprint('match = ' +str((xtime,partno,x) ) )
                 matches.append((xtime,partno,x))
 
     if len(matches) > 0:
@@ -105,9 +127,9 @@ def get_default_duplex_source(device_name):
     if re.findall(r'--source',out):
         try:
             if debug:
-                display('get_default_duplex_source: Found source line in scanimage output.')
+                logprint('get_default_duplex_source: Found source line in scanimage output.')
         except:
-            display('debug not defined')
+            logprint('debug not defined')
         # scanner sources for paper
         sources = re.sub(r'.*?--source\s*([^\n]*).*',r'\1',out,flags=re.DOTALL).split('|')
         for x in sources:
@@ -129,7 +151,7 @@ def oddoreven_and_maxpart_number(filesclose,debug=False):
         if output == 'run_even':
             maxpart = max( [ x[1] for x in filesclose ] )
     if debug:
-        display(output,"maximum part number = ",maxpart+1)
+        logprint(output,"maximum part number = ",maxpart+1)
     return (output,maxpart)
 
 def run_scancommand(device_name,outputfile,width=None,height=None,mode=None,resolution=None,batch=False,batch_start='1',batch_increment='1',source=None,debug=False,logfile=None,dry_run=False):
@@ -160,19 +182,22 @@ def run_scancommand(device_name,outputfile,width=None,height=None,mode=None,reso
 
     # debugging information 
     if debug:
-        display('scancommand: ', scancommand)
-        print(scancommand)
+        logprint('scancommand: ', scancommand)
 
     # run scancommand
     if not dry_run:
-        run = subprocess.Popen(scancommand,stdout=logfile,stderr=logfile)
+        run = subprocess.Popen(scancommand,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         out,err = run.communicate()
+        logprint('scancommand error:', err)
+        if debug:
+            # output tends to be quite long.
+            logprint('scancommand output:', out)
         return out,err,run
     else:
-        display('Dry run. Not running scancommand.')
+        logprint('Dry run. Not running scancommand.')
 
     #except:
-        #display('Error running scancommand',logfile=logfile)
+        #logprint('Error running scancommand')
 
 
     # old code, can be deleted. if not run in batch mode, scanimage output must be redirected to stdout.
@@ -184,7 +209,7 @@ def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=False,img2p
     """
     Requires img2pdf and convert from imagemagick
 
-    Send files will full path name. Will convert to pdf using imagemagick convert and img2pdf. Has a redundant outputtype option.
+    Send files will full path name. Will convert to pdf using imagemagick convert and img2pdf. 
     
     Uses the default option img2pdf
 
@@ -194,13 +219,9 @@ def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=False,img2p
 
     Assumes file has an extension of the form file.xxx
 
-    The outputdir option is unused, but could be used to specify alternative output folders if necessary in the future.
-
-    The outputtype option is not used either, since I know I'm making a pdf using img2pdf, a program
-
     """
 
-    print("Converting raw scanned files to " + outputtype)
+    print("Converting raw scanned files to pdf" )
     os.system('sleep ' + str(wait))
     #cmd = ['/home/arjun/bin/misc_scripts/convert-compress-delete','-t',"pdf",'-d',outputdir,'-y']
     #os.system('chown arjun:szhao ' + outputdir + '*')
@@ -216,7 +237,7 @@ def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=False,img2p
                 try:
                     run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
                 except:
-                    display('Error compressing to jpg using convert.',logfile=logfile)
+                    logprint('Error compressing to jpg using convert.')
                     if debug:
                         traceback.print_exc(file=sys.stdout)
                 f = jpgf
@@ -229,11 +250,11 @@ def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=False,img2p
             try:
                 run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
             except:
-                display('Error creating pdf using img2pdf',logfile=logfile)
+                logprint('Error creating pdf using img2pdf')
                 if debug:
                     traceback.print_exc(file=sys.stdout)
             if debug:
-                display("conversion command: ", cmd,logfile=logfile)
+                logprint("conversion command: ", cmd)
 
             # add converted file to filelist
             converted = converted + [pdff]
@@ -249,11 +270,11 @@ def run_pdftk(filestopdftk,outputfile,debug=False,logfile=None):
         logfile = open('/tmp/brscan.log','a')
     pdftkcommand = ['pdftk'] + filestopdftk + ['cat','output',outputfile]
     if debug:
-       display("output filename: ", outputfile,logfile=logfile)
-    display("\npdftkcommand: " , pdftkcommand,logfile=logfile)
+       logprint("output filename: ", outputfile)
+    logprint("\npdftkcommand: " , pdftkcommand)
     run = subprocess.Popen(pdftkcommand,stdout=logfile,stderr=logfile)
     out,err = run.communicate()
-    display("pdftkcommand errors: " ,err,logfile=logfile)
+    logprint("pdftkcommand errors: " ,err)
 
 def run_chown(ownedby,outputfile,debug=False,logfile=None):
     if logfile==None:
@@ -262,11 +283,11 @@ def run_chown(ownedby,outputfile,debug=False,logfile=None):
         run = subprocess.Popen(['chown',ownedby,outputfile])
         out,err = run.communicate()
         if debug:
-            display("chown output,errors",out,err,logfile=logfile)
+            logprint("chown output,errors",out,err)
         else:
-            display("ran chown",logfile=logfile)
+            logprint("ran chown")
     else:
-        display("ownedby variable not set. not running chown.",logfile=logfile)
+        logprint("ownedby variable not set. not running chown.")
         
 
 
