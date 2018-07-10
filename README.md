@@ -134,6 +134,7 @@ The most important difference is that the scantoocr no longer attempts to do opt
 
 # TODO
 
+1.  Test the single sided scanning stuff. In particular, delete the pnm files.
 1.  Clean up the code.
 1.  Deal with permissions errors on the logfile.
 1.  Change logdir option to logfile. Make logging a little bit better.
