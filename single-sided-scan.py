@@ -40,8 +40,6 @@ def parse_arguments():
     # by default, its not in double mode.
     parser.add_argument('--duplex',nargs='?',action='store',default=None,const='manual')
     # requires exactly one argument, but this not set by nargs
-    # duplextype takes auto and manual. 
-    parser.add_argument('--duplextype',action='store',default='auto')
     # it's not a dry-run by default.
     parser.add_argument('--dry-run',action='store_true',default=False)
     args,unknown = parser.parse_known_args()
@@ -67,16 +65,11 @@ def parse_arguments():
     # normalize name so that its easy to find
     args.outputdir = os.path.normpath(args.outputdir)
 
-    # if args.duplex is passed, look at duplextype 
-    # if duplextype is auto, then look for duplex source. If it's empty
-    # choose something automatically from the driver. If it's set, use it.
-    # if duplextype is manual, then again look for duplex source. If it's empty, leave it unset.
-    # this is because if it's done manually, then the source does not really matter.
-    if args.duplex:
-        # command line option seen first
+    # if args.duplex is auto, then look for duplex source. If it's empty
+    # choose something automatically by running `scanimage -A`. If it's set, use it.
+    if args.duplex == 'auto':
         if not args.source:
-            if args.duplextype == 'auto':
-                args.source = scanutils.get_default_duplex_source()
+            args.source = scanutils.get_default_duplex_source()
 
     return args
 
@@ -119,6 +112,9 @@ if debug:
 match_string_time = args.outputdir + '/' + args.prefix+'-([0-9]+)-'+part+r'-[0-9]+\..*'
 match_string_part = args.outputdir + '/' + args.prefix+'-[0-9]+-'+part+r'-([0-9]+)\..*'
 
+# list of odd files
+odd_files_name = args.outputdir + '/' + '.' + args.prefix + '-odd-filelist'
+
 if debug:
     scanutils.logprint('Look for scanned files of the following form (regex): ', match_string_part)
 
@@ -127,89 +123,148 @@ if args.duplex == 'manual':
 
     scanutils.logprint('Running duplex mode = ', args.duplex)
 
-    # find all files in directory
-    try:
-        cmd = 'ls ' + args.outputdir + '/' + args.prefix + '*-part-*.pdf'
-        # filelist function ensures that a list is returned
-        files = scanutils.filelist(cmd)
-    except:
-        # ls might not find any files
-        files = []
-        scanutils.logprint("\nNo close by files found\n")
+    # look for off files list
+    if os.path.exists(odd_files_name):
+        odd_files_list = eval(open(odd_files_name).read())
+        scanutils.logprint('Found odd files list')
+        if debug:
+            scanutils.logprint('They are:',odd_files_list)
 
-    # find files close in creation time (specified by timeoffset) to other files in the directory
-    # files close will contain a list of tuples containing (filetime, part number, filename)
-    filesclose = scanutils.files_within_timeoffset(files,match_string_time,match_string_part,args.timenow,timeoffset,debug=debug)
-    if debug:
-        scanutils.logprint('files found = ',files,'filesclose = ',filesclose,'match_string_part = ',match_string_part,'match_string_time = ',match_string_time)
+        # can be overridden below if checks are failed.
+        run_mode = 'run_even'
 
-    # determine whether to run odd or even; if even, also find the  max part number of the file. 
-    (output,maxpart) = scanutils.oddoreven_and_maxpart_number(filesclose,debug=debug)
+        # look for file
+        oddfiles = []
+        for f in odd_files_list:
+            if os.path.exists(f):
+                oddfiles.append(f)
+            else:
+                # there is trouble; files missing. i won't do anything.
+                scanutils.logprint('There are files missing in the odd files list. Missing file = ',f)
+                # write filelist to logfile
+                scanutils.logprint('Writing list of saved odd files to log.')
+                scanutils.logprint(odd_files_list)
+        if len(oddfiles) > 0:
+            # the total number of files is of course twice the number of odd files
+            maxpart = 2*len(oddfiles) 
+        else:
+            run_mode = 'run_odd'
+            scanutils.logprint('No files exist in odd files list.')
+            os.remove(odd_files_name)
+         
+    else:
+        # if no odd filelist found, run in odd mode
+        run_mode = 'run_odd'
 
     # run scanner command
     outputfile = args.outputdir + '/' + args.prefix + '-' + str(args.timenow) + '-part-%03d.pnm'
-    if output == 'run_odd':
+    if run_mode == 'run_odd':
         scanutils.logprint('Scanning odd pages')
-        [out,err,processhandle] = scanutils.run_scancommand(args.device_name,outputfile,width=args.width,height=args.height,logfile=logfile,debug=debug,mode=args.mode,resolution=args.resolution,batch=True,batch_start='1',batch_increment='2',source=args.source,dry_run=args.dry_run)
-    else: # output == 'run_even'if
-        # if no even files found within 5 minutes of each other
-        # really these arguments to scancommand should not do type conversion for
-        # the numerican arguments. to fix.
+
+        [out,err,processhandle] = scanutils.run_scancommand(\
+                args.device_name,\
+                outputfile,\
+                width=args.width,\
+                height=args.height,\
+                logfile=logfile,\
+                debug=debug,\
+                mode=args.mode,\
+                resolution=args.resolution,\
+                batch=True,\
+                batch_start='1',\
+                batch_increment='2',\
+                source=args.source,\
+                dry_run=args.dry_run)
+    else: # run_mode == 'run_even'
         scanutils.logprint('Scanning even pages')
 
-        [out,err,processhandle] = scanutils.run_scancommand(args.device_name,outputfile,width=args.width,height=args.height,logfile=logfile,debug=debug,mode=args.mode,resolution=args.resolution,batch=True,batch_start=str(maxpart+1),batch_increment='-2',dry_run=args.dry_run)
+        [out,err,processhandle] = scanutils.run_scancommand(\
+                args.device_name,\
+                outputfile,\
+                width=args.width,\
+                height=args.height,\
+                logfile=logfile,\
+                debug=debug,\
+                mode=args.mode,\
+                resolution=args.resolution,\
+                batch=True,\
+                batch_start=str(maxpart),\
+                batch_increment='-2',\
+                dry_run=args.dry_run)
 
+    # convert files to pdf and concatenate them into one pdf
     if not args.dry_run:
         # convert files to pdf
         # implement wait limit here. use subprocess.wait for a process to finish.
         # otherwise this thing crashes. run_scancommand should return a subprocess
         # handle so you can wait for it 
         processhandle.wait()
+
+        # find list of scanned files.
         cmd = 'ls ' + args.outputdir + '/' + args.prefix + '-' + str(args.timenow) + '-part-*.pnm'
-        files = scanutils.filelist(cmd)
+        scanned_files = scanutils.filelist(cmd)
 
         if debug:
-            scanutils.logprint('Scanned files: ', files)
-        # find number of files by scanning the part number of the last file.
-        # assumes that the list is sorted.
+            scanutils.logprint('Scanned files: ', scanned_files)
+
         if debug:
-            scanutils.logprint('Debugging file_part: ', files[-1],match_string_part)
-        number_scanned = scanutils.file_part(files[-1],match_string_part)
+            scanutils.logprint('Debugging file_part: ', scanned_files[-1],match_string_part)
+
+        # find number of scanned files
+        number_scanned = len(scanned_files)
 
         if debug:
             scanutils.logprint("number_scanned: " + str(number_scanned))
 
         # wait for a specified time before trying to convert each file.
-        newfiles = scanutils.convert_to_pdf(files,wait=0,debug=debug,logfile=logfile)
-
-        # find newly converted files
-        # newfiles = scanutils.filelist('ls ' + args.outputdir +  '/' + args.prefix + '-' + str(args.timenow) + '-part-*.pdf')
+        err,converted_files = scanutils.convert_to_pdf(scanned_files,wait=0,debug=debug,logfile=logfile)
+        if not err and len(converted_files) == len(scanned_files):
+            for f in scanned_files:
+                os.remove(f)
 
         # make a filelist and output filename to pdftk
-        if output == 'run_odd':
+        if run_mode == 'run_odd':
             # compile the odd pages into a single pdf
             compiled_pdf_filename = args.outputdir +  '/' + args.prefix + '-' + today + '-' + str(int(time.time())) + '-odd.pdf'
-            filestopdftk = newfiles
+            filestopdftk = converted_files
 
             # write filelist to outputdir
             # to be used for new odd/even mechanism in the future.
-            tf = open(args.outputdir + '/.scantoocr-odd-filelist','w')
-            tf.write(str(newfiles))
-        elif output == 'run_even':
-           # if scanned even parts, and hence max part number is bigger than 1
-           # even files are automatically numbered in reverse by the scancommand.
-           oldfiles = [x[2] for x in filesclose]
-           oldfiles.sort() #newfiles should be sorted already
-           # new files have been ensured to be in sorted order.
-           # interleave two lists, nested for loops
-           allfiles = scanutils.interleave_lists(oldfiles,newfiles)
-           if debug:
-               scanutils.logprint('filelist: ' , allfiles)
-           # ensures that the filename for compiled pdf is unique
-           compiled_pdf_filename = args.outputdir +  '/' + args.prefix + '-' + today + '-' + str(int(time.time())) + '.pdf'
-           filestopdftk = allfiles
+            tempf = open(odd_files_name,'w')
+            tempf.write(str(converted_files))
+            tempf.close()
+        elif run_mode == 'run_even':
+            # if scanned even parts, and hence max part number is bigger than 1
+            # even files are automatically numbered in reverse by the scancommand.
+            # new files have been ensured to be in sorted order.
+            converted_files.sort() #newfiles should be sorted already
 
-        scanutils.run_pdftk(filestopdftk,compiled_pdf_filename,debug=debug,logfile=logfile)
+            # interleave two lists, nested for loops
+            if len(oddfiles) == len(converted_files):
+                allfiles = scanutils.interleave_lists(oddfiles,converted_files)
+            else:
+                logprint('Even files scanned not equal to odd files scanned. Compiling even files alone.')
+                allfiles = converted_files
+
+            if debug:
+                scanutils.logprint('filelist: ' , allfiles)
+            # ensures that the filename for compiled pdf is unique
+            compiled_pdf_filename = args.outputdir +  '/' + args.prefix + '-' + today + '-' + str(int(time.time())) + '.pdf'
+            filestopdftk = allfiles
+
+            # finally delete even files list
+            try:
+                os.remove(odd_files_name)
+            except:
+                logprint('Error deleting odd files list!!! Must manually delete')
+                if debug:
+                    traceback.print_exc(file=sys.stdout)
+
+
+        if len(filestopdftk) > 0:
+            scanutils.run_pdftk(filestopdftk,compiled_pdf_filename,debug=debug,logfile=logfile)
+        else:
+            scanutils.logprint('No files to compile')
 
         # make the files owned by certain somebody
         if ownedby:
@@ -227,7 +282,19 @@ else: # if not (double sided and manual double scanning) simply run single sided
 
     # run scan command
     outputfile = args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-%03d.pnm'
-    [out,err,processhandle] = scanutils.run_scancommand(args.device_name,outputfile,width=args.width,height=args.height,logfile=logfile,debug=debug,mode=args.mode,resolution=args.resolution,batch_start='1',batch_increment='1',source=args.source,dry_run=args.dry_run)
+    [out,err,processhandle] = scanutils.run_scancommand(\
+            args.device_name,\
+            outputfile,\
+            width=args.width,\
+            height=args.height,\
+            logfile=logfile,\
+            debug=debug,\
+            mode=args.mode,\
+            resolution=args.resolution,\
+            batch_start='1',\
+            batch_increment='1',\
+            source=args.source,\
+            dry_run=args.dry_run)
 
     # see if files have been created.
     if not args.dry_run:
@@ -260,7 +327,7 @@ else: # if not (double sided and manual double scanning) simply run single sided
         if number_scanned > 0:
             # wait for a time proportional to the number scanned
             # waiting is builtin to convert_to_pdf
-            convertedfiles = scanutils.convert_to_pdf(files,wait=0,debug=debug,logfile=logfile)
+            err,convertedfiles = scanutils.convert_to_pdf(files,wait=0,debug=debug,logfile=logfile)
 
             # find newly converted files
             #convertedfiles = filelist('ls ' + args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-*.pdf')

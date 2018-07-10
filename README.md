@@ -24,8 +24,8 @@ Brother's scripts are very basic, and do not do many of the things I need to hav
 
 This is what my enhanced scripts aim to do. They have the following features:
 
-1.  Support **duplex** scanning for Brother scanners, *whether or not they support duplex scanning*. That is, if you have a single sided scanning ADF, you feed the facing pages first, then flip the scanned pile over, and scan the reverse pages. The python scripts do the automated numbering and produce a single pdf document. The scripts also support scanners that do have duplex scanning ADFs.
-1.  Written in python, accept many options. 
+1.  Supports **duplex** scanning for Brother scanners, *whether or not they support duplex scanning*. That is, if you have a single sided scanning ADF, you feed the facing pages first, then flip the scanned pile over, and scan the reverse pages. The python scripts produce a single pdf document in the right order. The scripts also support scanners that do have duplex scanning ADFs.
+1.  Written in python, accepts many options, and runs many checks. 
 1.  Can detect default devices automatically. 
 1.  They are a drop in replacement for the brother scripts, and eventually, will require minimal configuration.
 
@@ -54,43 +54,53 @@ I assume that the basic utilities distributed by Brother work for you. This is a
 Then run
 
     cp !(brscan-skey-0.2.4-0.cfg) /opt/brother/scanner/brscan-skey/script
-    cp !(brscan-skey-0.2.4-0.cfg) /opt/brother/scanner/brscan-skey/
+    cp brscan-skey-0.2.4-0.cfg /opt/brother/scanner/brscan-skey/
+
+Overwrite any files when prompted.
 
 Edit the `brscan-skey-0.2.4-0.cfg` and change default options as necessary.
 
-Replace the files
+The two `cp` commands do the following: 
 
-    /opt/brother/scanner/brscan-skey/script/scantofile-0.2.4-1.sh
-    /opt/brother/scanner/brscan-skey/script/scantoocr-0.2.4-1.sh
-    /opt/brother/scanner/brscan-skey/script/scantoimage-0.2.4-1.sh
-    /opt/brother/scanner/brscan-skey/script/scantoemail-0.2.4-1.sh
+1.  Replace the files
 
-Copy the files
+        /opt/brother/scanner/brscan-skey/script/scantofile-0.2.4-1.sh
+        /opt/brother/scanner/brscan-skey/script/scantoocr-0.2.4-1.sh
+        /opt/brother/scanner/brscan-skey/script/scantoimage-0.2.4-1.sh
+        /opt/brother/scanner/brscan-skey/script/scantoemail-0.2.4-1.sh
 
-    scanutils.py
-    single-sided-scan.py
+1.  Copy the files
 
-to
+        scanutils.py
+        batchscan.py
 
-    /opt/brother/scanner/brscan-skey/script
+    to
 
-and importantly
+        /opt/brother/scanner/brscan-skey/script
 
-    brscan-skey-0.2.4-0.cfg
+    Copy the configuration files 
 
-to
+        brscan-skey-0.2.4-0.cfg
 
-    /opt/brother/scanner/brscan-skey/brscan-skey-0.2.4-0.cfg
+    to
 
-
+        /opt/brother/scanner/brscan-skey/brscan-skey-0.2.4-0.cfg
 
 ## How it works
 
-When the "Scan" button on the Brother scanner is hit, the scanner sends out a message that is caught by the brscan-skey.
+When the "Scan" button on the Brother scanner is hit, the scanner sends out a message that is caught by the brscan-skey. There are 4 or 5 commands that it usually invokes, depending on whether you chose
 
-<!-- Contains my scanning scripts for my Brother DCP-L2540DW scanner. It has an ADF -->
-<!-- and a Flatbed, but the ADF does not support duplex scanning. My scan scripts -->
-<!-- allow me to do the following -->
+    File,OCR,Image,Email
+
+Some newer models also have an FTP option. Then the brscan-skey daemon invokes the appropriate script after reading the configuration file `brscan-skey-*.cfg`. The script that is invoked can be changed in the configuration file. For example
+
+    /opt/brother/scanner/brscan-skey/script/scantoocr-0.2.4-1.sh 'brother4:net1;dev0'
+
+The first option to the script contains the device name. Brother's basic scripts are rudimentary and simply invoke the scanimage command. My scripts replace Brother's scripts and are wrappers for the python script `batchscan.py`. This script scans in scanimage's batch mode, which allows you to scan a bunch of automatically named individual files from the ADF. 
+
+The most important difference is that the scantoocr no longer attempts to do optical character recognition. Instead, it runs batchscan.py in duplex mode. This is the most important enhancement. The `--duplex` option to batchscan.py takes two values: auto or manual. When run in manual mode, it assumes that the ADF is not capable of automatic duplex scanning. In this case, you have to scan all the odd pages, manually flip the paper stack over and put it back in the ADF, and hit the OCR scan button again on the scanner to scan the even. The script then produces a compiled pdf file with the pages in the right order. The way the script detects whether or not it is scanning the odd pages or the even pages is via a file in the output directory called `.scantoocr-odd-filelist`. When scanning odd pages, it stores the scanned pages in this file. So if the file exists, it knows that it is scanning the even pages next. Once it is done scanning the even pages, it deletes `.scantoocr-odd-filelist`.
+
+### Files
 
 1.  `brscan-skey-0.2.4-0.cfg` This has to be copied to this precise directory:
     
@@ -98,47 +108,40 @@ When the "Scan" button on the Brother scanner is hit, the scanner sends out a me
 
     It tells the brscan-skey utility to call bash instead of sh, and it also has a bunch of new environment variables that can be used to control duplex scanning. 
 
-1.  `single-sided-scan.py`. This has the main python scripts that scan and convert to pdf. Called by `scantofile.sh`
-1.  `double-sided-scan.py`. This is called by scantoocr.sh and has the weird
-    timestamp checking stuff.
-1.  `scanutils.py`. This is a python module that has a bunch of useful functions
-    for `double-sided-scan.py`. 
-1.  `scantofile.sh` A simple scanning utility. They're based on the scripts
-    distributed by Brother and are called by the brscan-skey utility when it
-    detects the scan button being pressed on the scanner. It scans a file,
-    writes it to my directory, and converts it to a pdf. It is simply a wrapper for single-sided-scan.py with the appropriate options.
-1.  `scantoocr.sh` A more elaborate scanning utility that allows me to first
-    scan all the odd pages of a document using the ADF, and then scans all the
-    even sides. It calls a python script double-sided-scan.py that can detects
-    if a document is a single sided scan or a double sided scan using
-    timestamps. If two scans are less than five minutes apart, and it a series
-    of odd pages have been created within those five minutes, it assumes that
-    the two scans are are related and the even sides are being scanned. It
-    creates a single pdf file at the end using ImageMagick's convert.
-    It does have the disadvantage that it cannot really be used for
-    single sided scanning. 
-1.  `scantoimage.sh` Same as `scantofile.sh` but it's set to scan in color. I
-    find that Black & White at 300dpi works well enough for most documents for
-    me.
+1.  `batchscan.py`. This is the main python script that is invoked by `scantofile`, `scantoocr` and so on. This is a standalone command that has a bunch of optional commands. The most important option is `--duplex` which takes two values: auto and manual. The full list of options include
+    a.  --outputdir. Where to store the scanned files.
+    a.  --logdir The directory to write the log file in. 
+    a.  --prefix This the prefix for the names of the scanned files. Ex: --prefix='myfiles' will create files named 'myfiles-part-01.pdf'.
+    a.  --timenow Writes the current time to the file. Can be safely ignored for the most part.
+    a.  --device-name If empty, it tries to automatically detect a working scanner.
+    a.  --resolution Scan resolution.
+    a.  --height Scan page height.
+    a.  --width Scan page width.
+    a.  --mode The scan mode. Ex: "Black & White"
+    a.  --source Source of the documents. Ex: 'Automatic Document Feeder(left aligned,Duplex)'
+    a.  --duplex 'auto' or 'manual'. Leave blank for single sided mode.
+    a.  --dry-run If set, does not actually run scanimage, but outputs the command that it will run. Useful for testing.
+1.  `scanutils.py`. This is a python module that has a bunch of useful functions. It's imported by `batchscan.py`
+1.  `scantofile-*.sh` It is simply a wrapper for batchscan.py in single sided mode. It scans a bunch of files from the ADF, converts them to pdf, and compiles a single pdf file. It also deletes the raw `pnm` files produced by the scanner if the conversion to pdf was successful.
+1.  `scantoocr-*.sh` This is a wrapper for batchscan.py run in double sided mode. The double sided mode can be 'auto' or 'manual' (set in the configuration file). 
+1.  `scantoimage-*.sh` Same as the brother script, but it tries to scan in color, and converts to png. I haven't tested this as much.
 1.  `batch-flatbed-scan.sh`. This is a *manual* batch scanner using the flatbed
     for unusual page sizes. It allows you to manually turn pages and hit a key
     to continue. I needed to create this since scanimage's `--batch-prompt`
     option does not appear to work correctly with Brother's scanners. It is
-    related to this [bug report](http://lists.alioth.debian.org/pipermail/sane-devel/2016-May/034587.html).
-1.  `scantoemail.sh`. This is the standard Brother scanner utility. I think I
-    will turn this into a single sided scanning script from the ADF eventually.
+    related to this [bug report](http://lists.alioth.debian.org/pipermail/sane-devel/2016-May/034587.html). 
+1.  `scantoemail.sh`. This is the standard Brother scanner utility. 
 
 # TODO
 
+1.  Clean up the code.
 1.  Deal with permissions errors on the logfile.
 1.  Change logdir option to logfile. Make logging a little bit better.
-1.  To move to different mechanism for manual duplex scanning. Should change behaviour just a little bit. It should write a filelist of odd files to the directory. If it finds this file, then it should run the `run_even` routine, and then delete the filelist of oddfiles. As a backup, it should also save the `even` files as a separate file. So if you run scantoocr by mistake, you simply run it again, and it will delete the odd filelist, ensuring that you can rerun scantoocr right away. But the problem is that the `run_even` command will have the pages in reverse order. I suppose this can be fixed with a pdftk command manually. Perhaps to "clear the odd files scanned by mistake" you can have a check on the even side that does the following: if even files not equal to the number of odd files, then you delete the odd filelist, and don't create a compiled pdf output. 
 1.  Add an installation section to the README file.
-1.  Move back to sh for more portability. Is this really necessary?
-1.  Have to modify the chown mechanism. I can just add this functionality. The unix way is to not do this. But it's more convenient for me if it does, so I'm going to do it.
-1.  Perhaps it's ok to have the brscan daemon run by a normal user. In this case, you don't need to run chown. Then you can remove the chown script from your thingy. I don't think it will make it group writeable though, since the commands mgiht not respect the ACLs. So shirley might not be able to organize and delete the scans.
-1.  Have to allow a directory argument to `run_chown`. Currently its being called by `convert_to_pdf` as well.
+1.  Have to modify the chown mechanism. I can just add this functionality. The unix way is to not do this. But it's more convenient for me if it does, so I'm going to do it. Perhaps it's ok to have the brscan daemon run by a normal user. In this case, you don't need to run chown. Then you can remove the chown script from your thingy. I don't think it will make it group writeable though, since the commands mgiht not respect the ACLs. So my wife might not be able to organize and delete the scans on a shared folder. I guess this is a personal problem.
 1.  Have to fix single-sided-scan.py so that it accounts for permissions properly. 
+1.  ~~Move back to sh for more portability. Is this really necessary?~~ decided that since we have so many requirements, requiring bash is not too much to ask.
+1.  ~~To move to different mechanism for manual duplex scanning. Should change behaviour just a little bit. It should write a filelist of odd files to the directory. If it finds this file, then it should run the `run_even` routine, and then delete the filelist of oddfiles. As a backup, it should also save the `even` files as a separate file. So if you run scantoocr by mistake, you simply run it again, and it will delete the odd filelist, ensuring that you can rerun scantoocr right away. But the problem is that the `run_even` command will have the pages in reverse order. I suppose this can be fixed with a pdftk command manually. Perhaps to "clear the odd files scanned by mistake" you can have a check on the even side that does the following: if even files not equal to the number of odd files, then you delete the odd filelist, and don't create a compiled pdf output.~~
 1.  ~~Can you replace the `wait` statements by polling the subprocess handle, run.wait() or something? The wait quantities can then be limits. Maybe run.communicate() does the same thing.~~
 1.  ~~Remove my `convert-compress-delete` command, or simply add it to the scripts and run it for the time being.~~
 1.  ~~To test `convert_to_pdf`. Seems to be working.~~

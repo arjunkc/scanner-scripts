@@ -30,7 +30,6 @@ def logprint(*s):
     try:
         # will throw exception is logfile not found globally, I guess
         if logfile:
-            print('Writing to logfile',logfile)
             print(*s,file=logfile)
             logfile.flush()
             if debug:
@@ -72,9 +71,9 @@ def files_within_timeoffset(l,match_string_time,match_string_part,timenow,timeof
         # extract time in seconds from file
         xtime = file_time(x,match_string_time)
         partno = file_part(x,match_string_part)
-        if debug and xtime!= None:
+        if debug and xtime != None:
             logprint('xtime = ' + str(xtime) + '. part number = ' + str(partno) + '\n')
-            logprint('type xtime = ' + str(type(xtime)) + '. type timenow = ' + str(type(timenow)) + '. type timeoffset = ' + str(type(timeoffset)) + '\n')
+            # logprint('type xtime = ' + str(type(xtime)) + '. type timenow = ' + str(type(timenow)) + '. type timeoffset = ' + str(type(timeoffset)) + '\n')
         if xtime != None:
             if abs(xtime - timenow) <= timeoffset:
                 if debug:
@@ -229,42 +228,50 @@ def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=False,img2p
     #cmd = ['/home/arjun/bin/misc_scripts/convert-compress-delete','-t',"pdf",'-d',outputdir,'-y']
     #os.system('chown arjun:szhao ' + outputdir + '*')
     converted = []
-    for f in filelist:
-        if os.path.exists(f):
-            if compress:
-                # compress file to jpg
-                jpgf = re.sub(r'\....$',r'.jpg',f)
-                cmd = ['convert','-quality','90','-density','300',f,jpgf]
+    err = False
+    try:
+        for f in filelist:
+            if os.path.exists(f):
+                if compress:
+                    # compress file to jpg
+                    jpgf = re.sub(r'\....$',r'.jpg',f)
+                    cmd = ['convert','-quality','90','-density','300',f,jpgf]
+                    if debug:
+                        print(cmd)
+                    try:
+                        run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
+                    except:
+                        logprint('Error compressing to jpg using convert.')
+                        err = True
+                        if debug:
+                            traceback.print_exc(file=sys.stdout)
+                    f = jpgf
+
+                pdff = re.sub(r'\....$',r'.pdf',f)
+                cmd = ['img2pdf'] + img2pdfopts + ['-o',pdff,f]
                 if debug:
                     print(cmd)
+
                 try:
                     run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
                 except:
-                    logprint('Error compressing to jpg using convert.')
+                    err = True
+                    logprint('Error creating pdf using img2pdf')
                     if debug:
                         traceback.print_exc(file=sys.stdout)
-                f = jpgf
-
-            pdff = re.sub(r'\....$',r'.pdf',f)
-            cmd = ['img2pdf'] + img2pdfopts + ['-o',pdff,f]
-            if debug:
-                print(cmd)
-
-            try:
-                run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
-            except:
-                logprint('Error creating pdf using img2pdf')
                 if debug:
-                    traceback.print_exc(file=sys.stdout)
-            if debug:
-                logprint("conversion command: ", cmd)
+                    logprint("conversion command: ", cmd)
 
-            # add converted file to filelist
-            converted = converted + [pdff]
-            # wait for process to return
-            run.wait()
+                # add converted file to filelist
+                converted = converted + [pdff]
+                # wait for process to return
+                run.wait()
+    except:
+        err = True
+        if debug:
+            traceback.print_exc(file=sys.stdout)
 
-    return converted
+    return err,converted
 
 def run_pdftk(filestopdftk,outputfile,debug=False,logfile=None):
     print("Compiling pdf file using pdftk")
