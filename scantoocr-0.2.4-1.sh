@@ -8,7 +8,7 @@ set +o noclobber
 #   
 #       100,200,300,400,600
 #
-#   This is my batch scan. It scans by default to double sided pages.
+#   This is my batch scan. It scans double sided pages by default.
 #   query device with scanimage -h to get allowed resolutions
 #   Will scan from the 'brother4:net1;dev0' scanner by default.
 #   To do:
@@ -86,7 +86,8 @@ echo "$*" >> ${logfile}
 set >> ${logfile}
 echo $LOGDIR >> ${logfile}
 
-echo "${basedir}/single-sided-scan.py \
+fileprefix='scantoocr'
+echo "${basedir}/batchscan.py \
     --outputdir ${SAVETO} \
     --logdir ${LOGDIR} \
     --prefix ${fileprefix} \
@@ -97,10 +98,9 @@ echo "${basedir}/single-sided-scan.py \
     --width $width \
     --mode "$mode" \
     --source "$DUPLEXSOURCE" \
-    --duplex "$DUPLEXTYPE"" 
+    --duplex "$DUPLEXTYPE" " 
 
-fileprefix='scantoocr'
-${basedir}/single-sided-scan.py \
+${basedir}/batchscan.py \
     --outputdir ${SAVETO} \
     --logdir ${LOGDIR} \
     --prefix ${fileprefix} \
@@ -113,5 +113,4 @@ ${basedir}/single-sided-scan.py \
     --source "$DUPLEXSOURCE" \
     --duplex "$DUPLEXTYPE" 
     #--dry-run \
-    #>> $logfile 2>&1 
 

@@ -134,11 +134,11 @@ The most important difference is that the scantoocr no longer attempts to do opt
 
 # TODO
 
-1.  Test the single sided scanning stuff. In particular, delete the pnm files.
+1.  Test the single sided scanning stuff. ~~In particular, delete the pnm files.~~
 1.  Clean up the code.
 1.  Deal with permissions errors on the logfile.
 1.  Change logdir option to logfile. Make logging a little bit better.
-1.  Add an installation section to the README file.
+1.  ~~Add an installation section to the README file.~~
 1.  Have to modify the chown mechanism. I can just add this functionality. The unix way is to not do this. But it's more convenient for me if it does, so I'm going to do it. Perhaps it's ok to have the brscan daemon run by a normal user. In this case, you don't need to run chown. Then you can remove the chown script from your thingy. I don't think it will make it group writeable though, since the commands mgiht not respect the ACLs. So my wife might not be able to organize and delete the scans on a shared folder. I guess this is a personal problem.
 1.  Have to fix single-sided-scan.py so that it accounts for permissions properly. 
 1.  ~~Move back to sh for more portability. Is this really necessary?~~ decided that since we have so many requirements, requiring bash is not too much to ask.

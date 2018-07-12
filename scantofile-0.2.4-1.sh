@@ -4,11 +4,11 @@ set +o noclobber
 #   Edited by Arjun Krishnan Apr 03 2017
 #
 #   $1 = scanner device
-#
+#   $2 = brother internal
 #   
 #       100,200,300,400,600
 #
-#   This is my batch scan. It scans by default to single sided pages.
+#   This is my batch scan. It scans single sided pages by default.
 #   query device with scanimage -h to get allowed resolutions
 #   Will scan from the 'brother4:net1;dev0' scanner by default.
 #   To do:
@@ -17,9 +17,8 @@ set +o noclobber
 
 resolution=300
 
-if [ -z "$1" ]; then
-    device='brother4:bus3;dev7'
-else
+if [ -n "$1" ]; then
+    # if first argument is not empty
     device=$1
 fi
 
@@ -28,12 +27,28 @@ width=215.88
 # the height has to be set. its now 11in = 279.4 and 11.4in = 290. Setting the height higher does not work on the ADF, but does work on the flatbet
 height=279.4
 mode="Black & White"
-docsource="Automatic Document Feeder(left aligned)"
 
 epochnow=$(date '+%s')
 
+# LOGFILE
+scriptname=$(basename "$0")
+# $0 refers to the script name
+basedir=$(readlink -f "$0" | xargs dirname)
+
+# change to directory of script
+cd ${basedir}
+echo "basedir = $basedir" 
+
 # ugly hack that makes environment variables set available
-source /opt/brother/scanner/brscan-skey/brscan-skey-*.cfg
+cfgfile=$(ls ../brscan-skey-*.cfg)
+echo "cfgfile = $cfgfile"
+if [[ -r "$cfgfile" ]]; then
+    echo "Found cfgfile"
+    source "$cfgfile"
+    echo "environment after processing cfgfile"
+    env
+fi
+
 
 # SAVETO DIRECTORY
 if [[ -z "$SAVETO" ]];  then
@@ -44,9 +59,6 @@ fi
 
 mkdir -p $SAVETO
 
-# LOGFILE
-scriptname=$(basename "$0")
-basedir=$(dirname "$0")
 if [[ -z $LOGDIR ]]; then
     # if LOGDIR is not set, choose a default
     mkdir -p ${HOME}/brscan
@@ -57,14 +69,19 @@ else
 fi
 touch ${logfile}
 
+# if SOURCE is not set
+if [[ -z $SOURCE ]]; then
+    SOURCE="Automatic Document Feeder(left aligned)"
+fi
 # for debugging purposes, output arguments
-echo $* >> ${logfile}
+echo "options after processing." >> ${logfile}
+echo "$*" >> ${logfile}
 # export environment to logfile
 set >> ${logfile}
 echo $LOGDIR >> ${logfile}
 
 fileprefix='scantofile'
-${basedir}/single-sided-scan.py \
+echo "${basedir}/batchscan.py \
     --outputdir ${SAVETO} \
     --logdir ${LOGDIR} \
     --prefix ${fileprefix} \
@@ -74,6 +91,17 @@ ${basedir}/single-sided-scan.py \
     --height $height \
     --width $width \
     --mode "$mode" \
-    --source "$docsource" \
-    >> $logfile 2>&1 
+    --source "$SOURCE" "
 
+${basedir}/batchscan.py \
+    --outputdir ${SAVETO} \
+    --logdir ${LOGDIR} \
+    --prefix ${fileprefix} \
+    --timenow ${epochnow} \
+    --device-name ${device} \
+    --resolution ${resolution} \
+    --height $height \
+    --width $width \
+    --mode "$mode" \
+    --source "$SOURCE" 
+    #--dry-run \
