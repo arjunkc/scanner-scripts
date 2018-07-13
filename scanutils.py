@@ -89,12 +89,22 @@ def files_within_timeoffset(l,match_string_time,match_string_part,timenow,timeof
     # matches is a 3-tuple containing, (filetime, part number, filename)
     return matches
 
-def filelist(globbing_pattern,logfile=None):
-    if logfile==None:
-        logfile = open('/tmp/brscan.log','a')
-    # logfile implementation untested
-    run = subprocess.check_output(globbing_pattern,shell=True,stderr=logfile)
-    return run.decode().split('\n')[0:-1]
+def filelist(directory,regex):
+    '''
+    Returns full pathname of files found matching a particular regular expression
+
+    I was originally using ls to return the full pathname.
+    '''
+    files = os.listdir(directory)
+    if debug:
+        logprint('scanutils.filelist: Trying to find',regex,' in ',files)
+
+    matched_files = []
+    for f in files:
+        if re.match(regex,f):
+            matched_files.append(directory + '/' + f)
+
+    return matched_files
 
 def interleave_lists(l1,l2):
     # will interleave upto the shorter of the lengths of l1 and l2
@@ -224,7 +234,10 @@ def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=False,img2p
 
     """
 
-    print("Converting raw scanned files to pdf" )
+    logprint("Converting raw scanned files to pdf" )
+    if debug:
+        logprint('Received filelist to convert:',filelist)
+
     os.system('sleep ' + str(wait))
     #cmd = ['/home/arjun/bin/misc_scripts/convert-compress-delete','-t',"pdf",'-d',outputdir,'-y']
     #os.system('chown arjun:szhao ' + outputdir + '*')
@@ -271,6 +284,8 @@ def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=False,img2p
         err = True
         if debug:
             traceback.print_exc(file=sys.stdout)
+    if debug:
+        logprint('Converted files',converted)
 
     return err,converted
 

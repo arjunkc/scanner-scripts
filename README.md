@@ -4,7 +4,7 @@
 
 This is a work in progress, but you can test them on your machine as long as you you have the required packages.
 
-These are linux enhancement scripts to Brother's brscan-skey scripts. I have tested these on consumer brother scanners like the 
+These are linux enhancement scripts to Brother's brscan-skey scripts. I have tested the scripts on the following consumer brother scanners:
 
     DCP-L2540DW (no automatic duplex)
     MFC-L2740DW (duplex automatic document feeder)
@@ -20,23 +20,24 @@ where `#` is a number (currently 4). The `brscan#` package contains the binary d
 
 Brother's scripts are very basic, and do not do many of the things I need to have an effective network or USB scanner for my work. In particular, they do not work too well with an (Automatic Document Feeder) ADF. 
 
-**The most important feature for me is to be able to walk to the printer, throw a document in the ADF and hit scan. A pdf of this document should automatically be saved on my computer.**
+**The most important feature for me is to be able to walk to the printer, throw a document in the ADF and hit scan. A pdf of this document should automatically be saved on my computer in a folder of my choice. This operation should support duplex scanning, whether or not the scanner supports automatic duplex scanning.**
 
 This is what my enhanced scripts aim to do. They have the following features:
 
 1.  Supports **duplex** scanning for Brother scanners, *whether or not they support duplex scanning*. That is, if you have a single sided scanning ADF, you feed the facing pages first, then flip the scanned pile over, and scan the reverse pages. The python scripts produce a single pdf document in the right order. The scripts also support scanners that do have duplex scanning ADFs.
-1.  Written in python, accepts many options, and runs many checks. 
+1.  Written in python, accepts many options, should be extensible. 
 1.  Can detect default devices automatically. 
 1.  They are a drop in replacement for the brother scripts, and eventually, will require minimal configuration.
 
 ## Requirements
-I have tested it on python 3.5 and 3.6. Requires the debian brother package downloaded from the Brother website ( [example](http://support.brother.com/g/s/id/linux/en/before.html?c=us&lang=en&prod=dcpl2540dw_us_as&redirect=on#ds620)).
 
+
+1.  Requires the Debian Brother scanner driver downloaded from Brother's website ( [example](http://support.brother.com/g/s/id/linux/en/before.html?c=us&lang=en&prod=dcpl2540dw_us_as&redirect=on#ds620)). If installing on Archlinux, use the debtap (Debian to Arch package) program to get an installable Archlinux package.
 1.  sane
 1.  Python 3
-1.  Imagemagick. For converting pnm files to pdf. 
+1.  Imagemagick. For converting pnm files to jpg. 
 1.  img2pdf seems to work best for embedding jpgs in pdfs.
-1.  pdftk. For compiling the image files into one pdf.
+1.  pdftk. For compiling the image files into one pdf. 
 1.  bash. This is because I know bash better than sh.
 
 ## Installation
@@ -49,16 +50,15 @@ The default brother driver is installed to
 
     /opt/brother/scanner/brscan-skey/
 
-I assume that the basic utilities distributed by Brother work for you. This is an important step to get working first.
+I assume that the basic scanner scripts distributed by Brother work for you. It is important to get the brscan-skey daemon working first.
 
-Then run
+Edit the `brscan-skey-0.2.4-0.cfg` and change default options as necessary. Then run
 
+    cd scanner-scripts
     cp !(brscan-skey-0.2.4-0.cfg) /opt/brother/scanner/brscan-skey/script
     cp brscan-skey-0.2.4-0.cfg /opt/brother/scanner/brscan-skey/
 
 Overwrite any files when prompted.
-
-Edit the `brscan-skey-0.2.4-0.cfg` and change default options as necessary.
 
 The two `cp` commands do the following: 
 
@@ -88,17 +88,27 @@ The two `cp` commands do the following:
 
 ## How it works
 
-When the "Scan" button on the Brother scanner is hit, the scanner sends out a message that is caught by the brscan-skey. There are 4 or 5 commands that it usually invokes, depending on whether you chose
+When the "Scan" button on the scanner is hit, the scanner sends out a message that is caught by the brscan-skey daemon. There are 4 or 5 commands that it usually invokes, depending on whether you chose
 
     File,OCR,Image,Email
 
-Some newer models also have an FTP option. Then the brscan-skey daemon invokes the appropriate script after reading the configuration file `brscan-skey-*.cfg`. The script that is invoked can be changed in the configuration file. For example
+Some newer models also have an FTP option. Then the brscan-skey daemon invokes the appropriate script after reading the configuration file `brscan-skey-*.cfg`. It usually finds in `/opt/brother/scanner/brscan-skey` directory (generally, the directory in which the brscan-skey script is installed ?). The script that is invoked can be changed in the configuration file. For example, my `brscan-skey-*.cfg` has the following variable set
 
-    /opt/brother/scanner/brscan-skey/script/scantoocr-0.2.4-1.sh 'brother4:net1;dev0'
+    FILE="/bash  /opt/brother/scanner/brscan-skey/script/scantofile-0.2.4-1.sh"
+    
+So if the File option is chosen on the scanner, brscan-skey will call 
 
-The first option to the script contains the device name. Brother's basic scripts are rudimentary and simply invoke the scanimage command. My scripts replace Brother's scripts and are wrappers for the python script `batchscan.py`. This script scans in scanimage's batch mode, which allows you to scan a bunch of automatically named individual files from the ADF. 
+    bash /opt/brother/scanner/brscan-skey/script/scantoocr-0.2.4-1.sh <device name>
 
-The most important difference is that the scantoocr no longer attempts to do optical character recognition. Instead, it runs batchscan.py in duplex mode. This is the most important enhancement. The `--duplex` option to batchscan.py takes two values: auto or manual. When run in manual mode, it assumes that the ADF is not capable of automatic duplex scanning. In this case, you have to scan all the odd pages, manually flip the paper stack over and put it back in the ADF, and hit the OCR scan button again on the scanner to scan the even. The script then produces a compiled pdf file with the pages in the right order. The way the script detects whether or not it is scanning the odd pages or the even pages is via a file in the output directory called `.scantoocr-odd-filelist`. When scanning odd pages, it stores the scanned pages in this file. So if the file exists, it knows that it is scanning the even pages next. Once it is done scanning the even pages, it deletes `.scantoocr-odd-filelist`.
+where `<device name>` is something like
+
+    'brother4:net1;dev0'
+
+Brother's basic scripts are rudimentary and simply invoke the scanimage command. When the OCR button is pressed, Brother's script also attempts to run an optical character recognition software. This is not such a useful feature for me.
+
+My scripts replace Brother's scripts and are wrappers for the python script `batchscan.py`. `batchscan.py` scans in scanimage's batch mode, which allows you to scan a bunch of automatically named individual files from the ADF. The most important difference is that when the OCR option is chosen on the scanner, `batchscan.py` no longer attempts to run optical character recognition software. **Instead, it runs batchscan.py in duplex mode**. The `--duplex` option to batchscan.py takes two values: auto or manual. When run in manual mode, it assumes that the ADF is not capable of automatic duplex scanning. In this case, you have to scan all the odd pages, manually flip the paper stack over and put it back in the ADF, and hit the OCR scan button again on the scanner to scan the even. The script then produces a compiled pdf file with the pages in the right order. The way the script detects whether or not it is scanning the odd pages or the even pages is via a file in the output directory called `.scantoocr-odd-filelist`. When scanning odd pages, it stores the names of the scanned pages in this file. So if the file exists, it knows that it is scanning the even pages next. Once it is done scanning the even pages, it deletes `.scantoocr-odd-filelist`.
+
+`batchscan.py` also converts the scanned `pnm` files to `jpg` and then embeds it into a pdf. This is a fairly space efficient option, and typically converts scans that are several megabytes in size to a few kilobytes.
 
 ### Files
 
@@ -109,6 +119,7 @@ The most important difference is that the scantoocr no longer attempts to do opt
     It tells the brscan-skey utility to call bash instead of sh, and it also has a bunch of new environment variables that can be used to control duplex scanning. 
 
 1.  `batchscan.py`. This is the main python script that is invoked by `scantofile`, `scantoocr` and so on. This is a standalone command that has a bunch of optional commands. The most important option is `--duplex` which takes two values: auto and manual. The full list of options include
+
     a.  --outputdir. Where to store the scanned files.
     a.  --logdir The directory to write the log file in. 
     a.  --prefix This the prefix for the names of the scanned files. Ex: --prefix='myfiles' will create files named 'myfiles-part-01.pdf'.
@@ -121,6 +132,7 @@ The most important difference is that the scantoocr no longer attempts to do opt
     a.  --source Source of the documents. Ex: 'Automatic Document Feeder(left aligned,Duplex)'
     a.  --duplex 'auto' or 'manual'. Leave blank for single sided mode.
     a.  --dry-run If set, does not actually run scanimage, but outputs the command that it will run. Useful for testing.
+
 1.  `scanutils.py`. This is a python module that has a bunch of useful functions. It's imported by `batchscan.py`
 1.  `scantofile-*.sh` It is simply a wrapper for batchscan.py in single sided mode. It scans a bunch of files from the ADF, converts them to pdf, and compiles a single pdf file. It also deletes the raw `pnm` files produced by the scanner if the conversion to pdf was successful.
 1.  `scantoocr-*.sh` This is a wrapper for batchscan.py run in double sided mode. The double sided mode can be 'auto' or 'manual' (set in the configuration file). 
@@ -134,7 +146,7 @@ The most important difference is that the scantoocr no longer attempts to do opt
 
 # TODO
 
-1.  Test the single sided scanning stuff. ~~In particular, delete the pnm files.~~
+1.  Test the single sided scanning stuff. ~~In particular, delete the pnm files.~~ Still working, the filelist function is a bit problematic. Also debugging output is not going in.
 1.  Clean up the code.
 1.  Deal with permissions errors on the logfile.
 1.  Change logdir option to logfile. Make logging a little bit better.
@@ -155,6 +167,7 @@ The most important difference is that the scantoocr no longer attempts to do opt
 1.  ~~Install the newest version of brscan-skey and see if it passes along information about duplex scanning.~~ There are scripts that automatically create the files. I would have to see it work, but I don't really see it working. You can only scan from the flatbed, it seems, and it only creates single files, no batch mode. I should add this to the main section of the readme. I tested the basic scripts from brother. The scantofile script is automatically generated, and it does not seem to capture the "double" sided option at all.
 
 # Notes
+Jul 13 2018 Fixed the filelist function. the code is still pretty messy. Now works when run as normal user arjun. Removed chown commands.
 
 Jul 06 2018 Works on thinkpad now. 
 
@@ -215,3 +228,10 @@ called
     LOGDIR
 
 SAVETO sets the directory that the scanner saves files to. LOGDIR stores logs in that directory.
+
+### License 
+
+batchscan.py adds batchscanning functionality brscan-skey
+Copyright © 2018 Arjun Krishnan
+
+Do whatever you want. 

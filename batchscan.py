@@ -10,7 +10,6 @@ import scanutils
 
 # SETTINGS
 part = 'part'
-ownedby = 'arjun:szhao'
 timeoffset = 5*60 # in seconds
 as_script = False
 debug = True 
@@ -92,7 +91,7 @@ if debug:
 
 
 # Open logfile
-logfile_name = args.logdir + '/single-sided-scan.log'
+logfile_name = args.logdir + '/batchscan.log'
 try:
     logfile = open(logfile_name,'a')
     logfile.write('Opening logfile.')
@@ -206,15 +205,16 @@ if args.duplex == 'manual':
         # find list of scanned files.
         # this section can be abstracted since it appears in both single sided and duplex mode
         try:
-            cmd = 'ls ' + args.outputdir + '/' + args.prefix + '-' + str(args.timenow) + '-part-*.pnm'
-            if debug:
-                scanutils.logprint('Command to find scanned files',cmd)
-            scanned_files = scanutils.filelist(cmd)
+            dirname = args.outputdir 
+            matchregex = args.prefix + '-' + str(int(args.timenow)) + r'-part-.*\.pnm'
+            scanned_files = scanutils.filelist(dirname,matchregex)
 
             if debug:
                 scanutils.logprint('Scanned files: ', scanned_files)
         except:
             scanutils.logprint("Error finding scanned files; probably no scanned files found. Check permissions and/or pathname.")
+            if debug:
+                traceback.print_exc(file=sys.stdout)
 
         # find number of scanned files
         # originally, I found the number of scanned files by looking at the maximum file part number. I don't see why I have to do that. In manual duplex scan mode, this also allows you to delete pages from the odd scanned pages list if necessary. 
@@ -275,10 +275,6 @@ if args.duplex == 'manual':
             else:
                 scanutils.logprint('No files to compile')
 
-            # make the files owned by certain somebody
-            if ownedby:
-                subprocess.Popen(['chown',ownedby,compiled_pdf_filename])
-
     #close logfile
     logfile.close() 
 
@@ -313,16 +309,16 @@ else: # if not (double sided and manual double scanning) simply run single sided
 
         # find list of scanned files.
         try:
-            cmd = 'ls ' + args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-*.pnm'
-            if debug:
-                scanutils.logprint('Command to find scanned files',cmd)
-            scanned_files = scanutils.filelist(cmd)
+            dirname = args.outputdir 
+            matchregex = args.prefix + '-' + str(int(args.timenow)) + r'-part-.*\.pnm'
+            scanned_files = scanutils.filelist(dirname,matchregex)
 
             if debug:
                 scanutils.logprint('Scanned files: ', scanned_files)
         except:
             scanutils.logprint("Error finding scanned files; probably no scanned files found. Check permissions and/or pathname.")
-
+            if debug:
+                traceback.print_exc(file=sys.stdout)
 
         # find number of scanned files
         # originally, I found the number of scanned files by looking at the maximum file part number. I don't see why I have to do that. In manual duplex scan mode, this also allows you to delete pages from the odd scanned pages list if necessary. 
@@ -348,8 +344,5 @@ else: # if not (double sided and manual double scanning) simply run single sided
 
             scanutils.run_pdftk(converted_files,compiled_pdf_filename,debug=debug,logfile=logfile)
 
-            # make the files owned by a certain somebody
-            if ownedby:
-                subprocess.Popen(['chown',ownedby,compiled_pdf_filename])
         else:
             scanutils.logprint('No scanned files found')
