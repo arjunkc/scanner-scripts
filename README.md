@@ -2,8 +2,6 @@
 
 ## Introduction
 
-This is a work in progress, but you can test them on your machine as long as you you have the required packages.
-
 These are linux enhancement scripts to Brother's brscan-skey scripts. I have tested the scripts on the following consumer brother scanners:
 
     DCP-L2540DW (no automatic duplex)
@@ -148,11 +146,12 @@ My scripts replace Brother's scripts and are wrappers for the python script `bat
 
 1.  Test the single sided scanning stuff. ~~In particular, delete the pnm files.~~ Still working, the filelist function is a bit problematic. Also debugging output is not going in.
 1.  Clean up the code.
-1.  Deal with permissions errors on the logfile.
-1.  Change logdir option to logfile. Make logging a little bit better.
-1.  ~~Add an installation section to the README file.~~
-1.  Have to modify the chown mechanism. I can just add this functionality. The unix way is to not do this. But it's more convenient for me if it does, so I'm going to do it. Perhaps it's ok to have the brscan daemon run by a normal user. In this case, you don't need to run chown. Then you can remove the chown script from your thingy. I don't think it will make it group writeable though, since the commands mgiht not respect the ACLs. So my wife might not be able to organize and delete the scans on a shared folder. I guess this is a personal problem.
+1.  Change logdir option to logfile. 
 1.  Have to fix single-sided-scan.py so that it accounts for permissions properly. 
+1.  Implement `dry_run` routines for `convert_to_pdf` and `run_pdftk`
+1.  ~~Deal with permissions errors on the logfile.~~ alleviated a little bit by logging to a tempfile
+1.  ~~Add an installation section to the README file.~~
+1.  ~~Have to modify the chown mechanism. I can just add this functionality. The unix way is to not do this. But it's more convenient for me if it does, so I'm going to do it. Perhaps it's ok to have the brscan daemon run by a normal user. In this case, you don't need to run chown. Then you can remove the chown script from your thingy. I don't think it will make it group writeable though, since the commands mgiht not respect the ACLs. So my wife might not be able to organize and delete the scans on a shared folder. I guess this is a personal problem.~~ I think that it does work, but I haven't tested it on mediaserver.
 1.  ~~Move back to sh for more portability. Is this really necessary?~~ decided that since we have so many requirements, requiring bash is not too much to ask.
 1.  ~~To move to different mechanism for manual duplex scanning. Should change behaviour just a little bit. It should write a filelist of odd files to the directory. If it finds this file, then it should run the `run_even` routine, and then delete the filelist of oddfiles. As a backup, it should also save the `even` files as a separate file. So if you run scantoocr by mistake, you simply run it again, and it will delete the odd filelist, ensuring that you can rerun scantoocr right away. But the problem is that the `run_even` command will have the pages in reverse order. I suppose this can be fixed with a pdftk command manually. Perhaps to "clear the odd files scanned by mistake" you can have a check on the even side that does the following: if even files not equal to the number of odd files, then you delete the odd filelist, and don't create a compiled pdf output.~~
 1.  ~~Can you replace the `wait` statements by polling the subprocess handle, run.wait() or something? The wait quantities can then be limits. Maybe run.communicate() does the same thing.~~

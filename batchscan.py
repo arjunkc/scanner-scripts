@@ -25,15 +25,14 @@ def parse_arguments():
     # argument list
     parser = argparse.ArgumentParser(description='Process arguments for single and double sided scan')
     # else take options from command line
-    parser.add_argument('--outputdir',nargs='?',action='store',default=default_outdir,const=default_outdir)
-    parser.add_argument('--logdir',nargs='?',action='store',default=default_logdir,const=default_logdir)
-    parser.add_argument('--prefix',nargs='?',action='store',default='brscan',const='brscan')
-    parser.add_argument('--timenow',nargs='?',type=int,action='store',const=int(time.time()),default=int(time.time()))
-    parser.add_argument('--device-name',nargs='?',action='store',const=None,default=None)
-    #parser.add_argument('--device_name',nargs='?',action='store',const=1,default=1)
-    parser.add_argument('--resolution',nargs='?',action='store',default='300',const='300')
-    parser.add_argument('--height',nargs='?',action='store',default='290',const='290')
-    parser.add_argument('--width',nargs='?',action='store',default='215.88',const='215.88')
+    parser.add_argument('--outputdir',nargs='?',action='store',default=default_outdir,const=default_outdir,help='output directory for scanned files')
+    parser.add_argument('--logdir',nargs='?',action='store',default=default_logdir,const=default_logdir,help='output directory for logfile')
+    parser.add_argument('--prefix',nargs='?',action='store',default='brscan',const='brscan',help='prefix for scanned file name')
+    parser.add_argument('--timenow',nargs='?',type=int,action='store',const=int(time.time()),default=int(time.time()),help='timestamp added to scanned output file, in secs from epoch')
+    parser.add_argument('--device-name',nargs='?',action='store',const=None,default=None,help='scanned device name. Example: brother4:net1;dev1')
+    parser.add_argument('--resolution',nargs='?',action='store',default='300',const='300',help='scanning resolution in dpi')
+    parser.add_argument('--height',nargs='?',action='store',default='290',const='290',help='scanned page height. default letter paper height in mm')
+    parser.add_argument('--width',nargs='?',action='store',default='215.88',const='215.88',help='scanned page width. similar to letter paper in mm')
     parser.add_argument('--mode',nargs='?',action='store',default=None,const=None)
     #parser.add_argument('--mode',action='store',default = 'Black & White')
     parser.add_argument('--source',nargs='?',action='store',default=None,const=None)
@@ -206,7 +205,7 @@ if args.duplex == 'manual':
         # this section can be abstracted since it appears in both single sided and duplex mode
         try:
             dirname = args.outputdir 
-            matchregex = args.prefix + '-' + str(int(args.timenow)) + r'-part-.*\.pnm'
+            matchregex = args.prefix + '-' + str(args.timenow) + r'-part-.*\.pnm'
             scanned_files = scanutils.filelist(dirname,matchregex)
 
             if debug:
@@ -286,7 +285,7 @@ else: # if not (double sided and manual double scanning) simply run single sided
     scanutils.logprint('Running in single side mode or --duplex="auto"')
 
     # run scan command
-    outputfile = args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-%03d.pnm'
+    outputfile = args.outputdir + '/' + args.prefix + '-' + str(args.timenow) + '-part-%03d.pnm'
     [out,err,processhandle] = scanutils.run_scancommand(\
             args.device_name,\
             outputfile,\
@@ -310,7 +309,7 @@ else: # if not (double sided and manual double scanning) simply run single sided
         # find list of scanned files.
         try:
             dirname = args.outputdir 
-            matchregex = args.prefix + '-' + str(int(args.timenow)) + r'-part-.*\.pnm'
+            matchregex = args.prefix + '-' + str(args.timenow) + r'-part-.*\.pnm'
             scanned_files = scanutils.filelist(dirname,matchregex)
 
             if debug:
