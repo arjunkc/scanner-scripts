@@ -104,6 +104,9 @@ def filelist(directory,regex):
         if re.match(regex,f):
             matched_files.append(directory + '/' + f)
 
+    # sort filelist. They have been made in such a way so that they will sort part-001,part-002 and so on
+    matched_files.sort()
+
     return matched_files
 
 def interleave_lists(l1,l2):
