@@ -221,7 +221,7 @@ def run_scancommand(device_name,outputfile,width=None,height=None,mode=None,reso
     #outfile_handle = open(outputfile,'w')
     #run = subprocess.Popen(scancommand,stdout=outfile_handle,stderr=logfile)
 
-def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=False,img2pdfopts=['--pagesize','Letter','--border','1in:1in']):
+def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=True,img2pdfopts=['--pagesize','Letter','--border','0in:0in']):
     """
     Requires img2pdf and convert from imagemagick
 
@@ -242,53 +242,64 @@ def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=False,img2p
         logprint('Received filelist to convert:',filelist)
 
     os.system('sleep ' + str(wait))
-    #cmd = ['/home/arjun/bin/misc_scripts/convert-compress-delete','-t',"pdf",'-d',outputdir,'-y']
-    #os.system('chown arjun:szhao ' + outputdir + '*')
+
+    # convert does not exist, we cannot compress the pnm files to jpg
+    if os.system('which convert') != 0:
+        compress = False
+
     converted = []
-    err = False
-    try:
-        for f in filelist:
-            if os.path.exists(f):
-                if compress:
-                    # compress file to jpg
-                    jpgf = re.sub(r'\....$',r'.jpg',f)
-                    cmd = ['convert','-quality','90','-density','300',f,jpgf]
+
+    if os.system('which img2pdf') == 0:
+        err = False
+        try:
+            for f in filelist:
+                if os.path.exists(f):
+                    if compress:
+                        # compress file to jpg
+                        jpgf = re.sub(r'\....$',r'.jpg',f)
+                        cmd = ['convert','-quality','90','-density','300',f,jpgf]
+                        if debug:
+                            print(cmd)
+                        try:
+                            run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
+                        except:
+                            logprint('Error compressing to jpg using convert.')
+                            err = True
+                            if debug:
+                                traceback.print_exc(file=sys.stdout)
+                        # rename the pnm file as the jpg file for pdf conversion
+                        f = jpgf
+                        run.wait()
+
+                    pdff = re.sub(r'\....$',r'.pdf',f)
+                    cmd = ['img2pdf'] + img2pdfopts + ['-o',pdff,f]
                     if debug:
                         print(cmd)
+
                     try:
                         run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
                     except:
-                        logprint('Error compressing to jpg using convert.')
                         err = True
+                        logprint('Error creating pdf using img2pdf')
                         if debug:
                             traceback.print_exc(file=sys.stdout)
-                    f = jpgf
-
-                pdff = re.sub(r'\....$',r'.pdf',f)
-                cmd = ['img2pdf'] + img2pdfopts + ['-o',pdff,f]
-                if debug:
-                    print(cmd)
-
-                try:
-                    run = subprocess.Popen(cmd,stdout=logfile,stderr=logfile)
-                except:
-                    err = True
-                    logprint('Error creating pdf using img2pdf')
                     if debug:
-                        traceback.print_exc(file=sys.stdout)
-                if debug:
-                    logprint("conversion command: ", cmd)
+                        logprint("conversion command: ", cmd)
 
-                # add converted file to filelist
-                converted = converted + [pdff]
-                # wait for process to return
-                run.wait()
-    except:
+                    # add converted file to filelist
+                    converted = converted + [pdff]
+                    # wait for process to return
+                    run.wait()
+        except:
+            err = True
+            if debug:
+                traceback.print_exc(file=sys.stdout)
+        if debug:
+            logprint('Converted files',converted)
+    else:
         err = True
         if debug:
-            traceback.print_exc(file=sys.stdout)
-    if debug:
-        logprint('Converted files',converted)
+            logprint('img2pdf does not exist, cannot write pdf')
 
     return err,converted
 
