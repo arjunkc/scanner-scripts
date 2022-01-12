@@ -221,7 +221,14 @@ def run_scancommand(device_name,outputfile,width=None,height=None,mode=None,reso
     #outfile_handle = open(outputfile,'w')
     #run = subprocess.Popen(scancommand,stdout=outfile_handle,stderr=logfile)
 
-def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=True,img2pdfopts=['--pagesize','Letter','--border','0in:0in']):
+def convert_to_pdf(
+        filelist,
+        wait=0,
+        debug=False,
+        logfile=None,
+        compress=True,
+        compress_format='png',
+        img2pdfopts=['--pagesize', 'Letter', '--border', '0in:0in']):
     """
     Requires img2pdf and convert from imagemagick
 
@@ -231,9 +238,11 @@ def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=True,img2pd
 
         '--pagesize','Letter','--border','1in:1in'
 
-    Has an unimplemented compress option. If true, I want convert to convert it to jpg before converting to pdf.
+    Has an unimplemented compress option. If true, I want convert to convert it to jpg (or compress_format) before converting to pdf.
 
     Assumes file has an extension of the form file.xxx
+
+    Jan 09 2022 changed jpg to pdf
 
     """
 
@@ -256,7 +265,7 @@ def convert_to_pdf(filelist,wait=0,debug=False,logfile=None,compress=True,img2pd
                 if os.path.exists(f):
                     if compress:
                         # compress file to jpg
-                        jpgf = re.sub(r'\....$',r'.jpg',f)
+                        jpgf = re.sub(r'\....$','.' + compress_format,f)
                         cmd = ['convert','-quality','90','-density','300',f,jpgf]
                         if debug:
                             print(cmd)

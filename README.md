@@ -27,9 +27,8 @@ This is what my enhanced scripts aim to do. They have the following features:
 1.  Can detect default devices automatically. 
 1.  They are a drop in replacement for the brother scripts, and eventually, will require minimal configuration.
 
-This package is definitely not user friendly, but it does come with an `./install.sh` script that I have done the bare minumum of testing with. Seems to work. *shrugs*.
-
 ## Requirements
+
 
 1.  Requires the Debian Brother scanner driver downloaded from Brother's website ( [example](http://support.brother.com/g/s/id/linux/en/before.html?c=us&lang=en&prod=dcpl2540dw_us_as&redirect=on#ds620)). If installing on Archlinux, use the debtap (Debian to Arch package) program to get an installable Archlinux package.
 1.  sane
@@ -160,6 +159,7 @@ Of course, this hidden file .scantoocr-odd-filelist is a source of pain from tim
 
 # TODO
 
+1.  Implement a better checking mechanism for `.scantoocr-odd-filelist`. Currently, if the number of odd files scanned is not equal to the even files, some dumb stuff will happen. Should the behaviour be to delete the `.scantoocr-odd-filelist`? Or should the user manually debug? Or should the files be renamed, and should a new odd-filelist be created? Or should an odd file list with the appropriate timestamp be created? I donno. To be revisited. The current way to fix this is to go in an manually *delete* the .scantoocr-odd-filelist file. There has got to be a better way.
 1.  Test the single sided scanning stuff. ~~In particular, delete the pnm files.~~ Still working, the filelist function is a bit problematic. Also debugging output is not going in.
 1.  Clean up the code.
 1.  Change logdir option to logfile. 
