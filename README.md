@@ -34,7 +34,7 @@ This is what my enhanced scripts aim to do. They have the following features:
 1.  sane
 1.  Python 3
 1.  Imagemagick. For converting pnm files to jpg. 
-1.  img2pdf seems to work best for embedding jpgs in pdfs.
+1.  img2pdf seems to work best for embedding jpgs in pdfs. The default convert command distributed with imagemagick is "lossy". I just haven't bothered to figure it out.
 1.  pdftk. For compiling the image files into one pdf. 
 1.  bash. This is because I know bash better than sh.
 
@@ -84,6 +84,19 @@ The two `cp` commands do the following:
 
         /opt/brother/scanner/brscan-skey/brscan-skey-0.2.4-0.cfg
 
+## Configuration
+This is mostly controlled using bash environment variables in 
+
+    brscan-skey-<your version>.cfg
+
+This is a file that is distributed with brscan-skey. The important variables are
+
+SAVETO       | contains the directory scans are saved into. This is the important thing to set
+LOGDIR       | self explanatory
+DUPLEXTYPE   | can take two values, manual or automatic. manual implies you have a single sided scanner,and you must scan the odd pages, and the flip it around and scan the even pages.
+SOURCE=""    | This is the paper source for the scanner. You can set this yourself by using scanimage -h. Needs sane and libsane to be installed, but you already knew that.
+DUPLEXSOURCE | This is the paper source duplex scanning for the scanner. You can set this yourself by using scanimage -h. Needs scanutils.
+
 ## How it works
 
 When the "Scan" button on the scanner is hit, the scanner sends out a message that is caught by the brscan-skey daemon. There are 4 or 5 commands that it usually invokes, depending on whether you chose
@@ -104,7 +117,9 @@ where `<device name>` is something like
 
 Brother's basic scripts are rudimentary and simply invoke the scanimage command. When the OCR button is pressed, Brother's script also attempts to run an optical character recognition software. This is not such a useful feature for me.
 
-My scripts replace Brother's scripts and are wrappers for the python script `batchscan.py`. `batchscan.py` scans in scanimage's batch mode, which allows you to scan a bunch of automatically named individual files from the ADF. The most important difference is that when the OCR option is chosen on the scanner, `batchscan.py` no longer attempts to run optical character recognition software. **Instead, it runs batchscan.py in duplex mode**. The `--duplex` option to batchscan.py takes two values: auto or manual. When run in manual mode, it assumes that the ADF is not capable of automatic duplex scanning. In this case, you have to scan all the odd pages, manually flip the paper stack over and put it back in the ADF, and hit the OCR scan button again on the scanner to scan the even. The script then produces a compiled pdf file with the pages in the right order. The way the script detects whether or not it is scanning the odd pages or the even pages is via a file in the output directory called `.scantoocr-odd-filelist`. When scanning odd pages, it stores the names of the scanned pages in this file. So if the file exists, it knows that it is scanning the even pages next. Once it is done scanning the even pages, it deletes `.scantoocr-odd-filelist`.
+My scripts replace Brother's scripts and are wrappers for the python script `batchscan.py`. `batchscan.py` scans in scanimage's batch mode, which allows you to scan a bunch of automatically named individual files from the ADF. The most important difference is that when the OCR option is chosen on the scanner, `batchscan.py` no longer attempts to run optical character recognition software. **Instead, it runs batchscan.py in duplex mode**. The `--duplex` option to batchscan.py takes two values: auto or manual. When run in manual mode, it assumes that the ADF is not capable of automatic duplex scanning. In this case, you have to scan all the odd pages, manually flip the paper stack over and put it back in the ADF, and hit the OCR scan button again on the scanner to scan the even. The script then produces a compiled pdf file with the pages in the right order. The way the script detects whether or not it is scanning the odd pages or the even pages is via a file in the output directory called `.scantoocr-odd-filelist`. When scanning odd pages, it stores the names of the scanned pages in this file. So if the file exists, it knows that it is scanning the even pages next. Once it is done scanning the even pages, it deletes `.scantoocr-odd-filelist`. 
+
+Of course, this hidden file .scantoocr-odd-filelist is a source of pain from time-to-time. For example, if you walk away from the scanner after scanning the the next sides and forget about it, it will quite nicely mess up your next few duplex scans. The solution here is to delete this .scantoocr-odd-filelist manually. I could put in a timer that detects whether or not `.scantoocr-odd-filelist` is "too old" or "stale", and performs a new duplex scan. Maybe I will do this at some point; it's trivial to implement. 
 
 `batchscan.py` also converts the scanned `pnm` files to `jpg` and then embeds it into a pdf. This is a fairly space efficient option, and typically converts scans that are several megabytes in size to a few kilobytes.
 
