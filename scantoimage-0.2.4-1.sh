@@ -2,27 +2,67 @@
 set +o noclobber
 #
 #   $1 = scanner device
-#   $2 = friendly name
-#
-
+#   $2 = brother internal
 #   
 #       100,200,300,400,600
 #
-# query device with scanimage -h to get allowed resolutions
-# in color resolution more than 300 slows things down
-resolution=300
-# leave height and width uncommented to autodetect
-#height=114
-#width=160
-compress_format="png"
+#   List devices with scanimage -L
+#   Query device with scanimage -h to get allowed resolutions
+#   In color, resolution more than 300 slows things down
 
 function Usage() {
     echo -e "Usage:"
-    echo -e "\t scantoimage.sh <devicename>\n"
-    echo -e "The devicename is optional."
+    echo -e "\t "$0" [option] <devicename>\n"
+    echo -e "The devicename is optional. Set by default to ${default_device}"
     echo -e "Check the source for options. Will write a png file in a default directory after scanning."
     echo -e "Heights and width can be specified in the script. So can compression format, resolution."
+    echo -e "\nOptions:"
+    echo -e "\t -h \t Print this help"
 }
+
+# LOGFILE
+scriptname=$(basename "$0")
+# $0 refers to the script name
+basedir=$(readlink -f "$0" | xargs dirname)
+
+# change to directory of script
+cd ${basedir}
+echo "basedir = $basedir" 
+
+# ugly hack that makes environment variables set available
+cfgfile=$(ls ../brscan-skey-*.cfg)
+echo "cfgfile = $cfgfile"
+if [[ -r "$cfgfile" ]]; then
+    echo "Found cfgfile"
+    source "$cfgfile"
+    echo "environment after processing cfgfile"
+    env
+fi
+
+
+# SAVETO DIRECTORY
+if [[ -z "$SAVETO" ]];  then
+    SAVETO=${HOME}'/brscan/images'
+else
+    SAVETO=${SAVETO}'/images/'
+fi
+
+mkdir -p $SAVETO
+
+if [[ -z $LOGDIR ]]; then
+    # if LOGDIR is not set, choose a default
+    mkdir -p ${HOME}/brscan
+    logfile=${HOME}"/brscan/$scriptname.log"
+else
+    mkdir -p $LOGDIR
+    logfile=${LOGDIR}"/$scriptname.log"
+fi
+touch ${logfile}
+
+# if SOURCE is not set
+if [[ -z $SOURCE ]]; then
+    SOURCE="Automatic Document Feeder(left aligned)"
+fi
 
 # parse one simple option. Allows you to get help
 while getopts "h" opt; do
@@ -30,30 +70,49 @@ while getopts "h" opt; do
         h)
             Usage
             exit 0
+            # usually there will be shift here
             ;;
     esac
 done
 
-# set color to full color or 24 bit. 
-mode='"24Bit Color"'
-#mode='"Black & White"'
+# see if scanners exists
+default_device=$(scanimage -L | head -n 1 | sed "s/.*\`\(.*\)'.*/\1/")
+if [[ -z "$default_device" ]]; then
+    echo "No devices found" | tee "$logfile"
+fi
 
-logfile="/home/arjun/brscan/brscan-skey.log"
 if [ -z "$1" ]; then
-    device='brother4:net1;dev0'
+    device="$default_device"
 else
     device=$1
 fi
 
-# in scantofile the widht and height are automatically set. Here, they're not.
+# OPTIONS follow
+resolution=300
+# in scantofile the width and height are automatically set. Here, they're not.
+# leave height and width uncommented to autodetect
+#height=114
+#width=160
+# set color to full color or 24 bit. 
+mode='"24Bit Color"' #other option is "Black & White"
+compress_format="png"
 
-mkdir -p ~/brscan/photos
+epochnow=$(date '+%s')
+
+# for debugging purposes, output arguments
+echo "options after processing." >> ${logfile}
+echo "$*" >> ${logfile}
+# export environment to logfile
+set >> ${logfile}
+echo $LOGDIR >> ${logfile}
+
+# BEGIN SCAN PROCEDURE
 if [ "`which usleep  2>/dev/null `" != '' ];then
     usleep 100000
 else
     sleep  0.1
 fi
-output_file=/home/arjun/brscan/photos/brscan_photo_"`date +%Y-%m-%d-%H-%M-%S`".pnm
+output_file="$SAVETO"/brscan_image_"`date +%Y-%m-%d-%H-%M-%S`".pnm
 
 #echo "scan from $2($device) to $output_file"
 
@@ -86,13 +145,10 @@ fi
 
 if [ -s $output_file ]; then
     echo  $output_file is created.
-    # change ownership so arjun and szhao have access
-    chown arjun:szhao $output_file
 
     # Should convert to jpg and delete duplicates
     output_file_compressed=$(dirname $output_file)"/"$(basename $output_file .pnm)".$compress_format"
     echo convert -trim -bordercolor White -border 20x10 +repage -quality 95 -density "$resolution" $output_file "$output_file_compressed" 
     echo convert -trim -quality 95 -density "$resolution" $output_file "$output_file_compressed" >> $logfile
     echo convert -trim -quality 95 -density "$resolution" "$output_file" "$output_file_compressed" | bash
-    chown arjun:szhao $output_file_compressed
 fi

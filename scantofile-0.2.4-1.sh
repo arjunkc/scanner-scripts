@@ -1,34 +1,26 @@
 #! /bin/bash
 set +o noclobber
 #
-#   Edited by Arjun Krishnan Apr 03 2017
-#
 #   $1 = scanner device
 #   $2 = brother internal
 #   
 #       100,200,300,400,600
 #
 #   This is my batch scan. It scans single sided pages by default.
-#   query device with scanimage -h to get allowed resolutions
-#   Will scan from the 'brother4:net1;dev0' scanner by default.
+#   List devices with scanimage -L
+#   Query device with scanimage -h to get allowed resolutions
 #   To do:
 #   ~~Apr 01 2016 To do, implement compression if possible.~~
 #   ~~Dec 31 2016 to do, combine even and odd files into one big pdf file~~
 
-resolution=300
-
-if [ -n "$1" ]; then
-    # if first argument is not empty
-    device=$1
-fi
-
-# the width is default and i wont use it. It's in mm and equal to 8.5in
-width=215.88
-# the height has to be set. its now 11in = 279.4 and 11.4in = 290. Setting the height higher does not work on the ADF, but does work on the flatbet
-height=279.4
-mode="Black & White"
-
-epochnow=$(date '+%s')
+function Usage() {
+    echo -e "Usage:"
+    echo -e "\t "$0" [option] <devicename>\n"
+    echo -e "The devicename is optional. Set by default to ${default_device}"
+    echo -e "Heights and width can be specified in the script."
+    echo -e "\nOptions:"
+    echo -e "\t -h \t Print this help"
+}
 
 # LOGFILE
 scriptname=$(basename "$0")
@@ -73,6 +65,41 @@ touch ${logfile}
 if [[ -z $SOURCE ]]; then
     SOURCE="Automatic Document Feeder(left aligned)"
 fi
+
+# parse one simple option. Allows you to get help
+while getopts "h" opt; do
+    case "$opt" in
+        h)
+            Usage
+            exit 0
+            # usually there will be shift here
+            ;;
+    esac
+done
+
+# see if scanners exists
+default_device=$(scanimage -L | head -n 1 | sed "s/.*\`\(.*\)'.*/\1/")
+if [[ -z "$default_device" ]]; then
+    echo "No devices found" | tee "$logfile"
+fi
+
+if [ -z "$1" ]; then
+    device="$default_device"
+else
+    device=$1
+fi
+
+# OPTIONS follow
+resolution=300
+# the width is default and i wont use it. It's in mm and equal to 8.5in
+width=215.88
+# the height has to be set. its now 11in = 279.4 and 11.4in = 290. Setting the height higher does not work on the ADF, but does work on the flatbet
+height=279.4
+# set color to Black and White by default
+mode="Black & White"
+
+epochnow=$(date '+%s')
+
 # for debugging purposes, output arguments
 echo "options after processing." >> ${logfile}
 echo "$*" >> ${logfile}
@@ -80,6 +107,7 @@ echo "$*" >> ${logfile}
 set >> ${logfile}
 echo $LOGDIR >> ${logfile}
 
+# BEGIN SCAN PROCEDURE
 fileprefix='scantofile'
 echo "${basedir}/batchscan.py \
     --outputdir ${SAVETO} \
