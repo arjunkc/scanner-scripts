@@ -1,5 +1,6 @@
 #! /bin/bash
 set +o noclobber
+#. /tmp/envfile
 #
 #   Edited by Arjun Krishnan Apr 03 2017
 #
@@ -86,22 +87,25 @@ echo "${basedir}/batchscan.py \
     --logdir ${LOGDIR} \
     --prefix ${fileprefix} \
     --timenow ${epochnow} \
-    --device-name ${device} \
+#    --device-name ${device} \
     --resolution ${resolution} \
     --height $height \
     --width $width \
     --mode "$mode" \
     --source "$SOURCE" "
 
-${basedir}/batchscan.py \
-    --outputdir ${SAVETO} \
-    --logdir ${LOGDIR} \
-    --prefix ${fileprefix} \
-    --timenow ${epochnow} \
-    --device-name ${device} \
-    --resolution ${resolution} \
-    --height $height \
-    --width $width \
-    --mode "$mode" \
-    --source "$SOURCE" 
+#${basedir}/batchscan.py \
+#    --outputdir ${SAVETO} \
+#    --logdir ${LOGDIR} \
+#    --prefix ${fileprefix} \
+#    --timenow ${epochnow} \
+#    --resolution ${resolution} \
+#    --height $height \
+#    --width $width \
+#    --mode "$mode" \
+#    --source "$SOURCE" 
     #--dry-run \
+#    --device-name ${device} \
+#whoami
+#scanimage -L
+scanimage --resolution 300 > /tmp/test
