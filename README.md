@@ -22,9 +22,9 @@ Brother's scripts are very basic, and do not do many of the things I need to hav
 
 This is what my enhanced scripts aim to do. They have the following features:
 
-1.  Supports **duplex** scanning for Brother scanners, *whether or not they support duplex scanning*. That is, if you have a single sided scanning ADF, you feed the facing pages first, then flip the scanned pile over, and scan the reverse pages. The python scripts produce a single pdf document in the right order. The scripts also support scanners that do have duplex scanning ADFs.
+1.  **Duplex** scanning for Brother scanners, *whether or not they support duplex scanning*. That is, if you have a single sided scanning ADF, you feed the facing pages first, then flip the scanned pile over, and scan the reverse pages. The python scripts produce a single pdf document in the right order. The scripts also support scanners that do have duplex scanning ADFs.
 1.  Written in python, accepts many options, should be extensible. 
-1.  Can detect default devices automatically. 
+1.  Detect default devices automatically. 
 1.  They are a drop in replacement for the brother scripts, and eventually, will require minimal configuration.
 
 ## Requirements
@@ -40,9 +40,18 @@ This is what my enhanced scripts aim to do. They have the following features:
 
 ## Installation
 
+### Automatic 
+
 Download the scripts:
 
     git clone https://github.com/arjunkc/scanner-scripts
+    cd scanner-scripts
+
+Run
+
+    sudo ./install.sh
+
+### Manual
 
 The default brother driver is installed to 
 
@@ -91,11 +100,13 @@ This is mostly controlled using bash environment variables in
 
 This is a file that is distributed with brscan-skey. The important variables are
 
-SAVETO       | contains the directory scans are saved into. This is the important thing to set
-LOGDIR       | self explanatory
-DUPLEXTYPE   | can take two values, manual or automatic. manual implies you have a single sided scanner,and you must scan the odd pages, and the flip it around and scan the even pages.
-SOURCE=""    | This is the paper source for the scanner. You can set this yourself by using scanimage -h. Needs sane and libsane to be installed, but you already knew that.
-DUPLEXSOURCE | This is the paper source duplex scanning for the scanner. You can set this yourself by using scanimage -h. Needs scanutils.
+Variable     | Function
+---          | ---
+SAVETO       | Contains the directory scans are saved into. This is the important thing to set
+LOGDIR       | Self explanatory
+DUPLEXTYPE   | Can take two values, manual or automatic. manual implies you have a single sided scanner,and you must scan the odd pages, and the flip it around and scan the even pages.
+SOURCE=""    | This is the paper source for the scanner. You can set this yourself by using `scanimage`. Needs sane and libsane to be installed, but you already knew that.
+DUPLEXSOURCE | This is the paper source when duplex scanning. You can set this yourself by using `scanimage` as above. 
 
 ## How it works
 
@@ -150,12 +161,12 @@ Of course, this hidden file .scantoocr-odd-filelist is a source of pain from tim
 1.  `scantofile-*.sh` It is simply a wrapper for batchscan.py in single sided mode. It scans a bunch of files from the ADF, converts them to pdf, and compiles a single pdf file. It also deletes the raw `pnm` files produced by the scanner if the conversion to pdf was successful.
 1.  `scantoocr-*.sh` This is a wrapper for batchscan.py run in double sided mode. The double sided mode can be 'auto' or 'manual' (set in the configuration file). 
 1.  `scantoimage-*.sh` Same as the brother script, but it tries to scan in color, and converts to png. I haven't tested this as much.
-1.  `batch-flatbed-scan.sh`. This is a *manual* batch scanner using the flatbed
+1.  ~~`batch-flatbed-scan.sh`.~~ This is a *manual* batch scanner using the flatbed
     for unusual page sizes. It allows you to manually turn pages and hit a key
     to continue. I needed to create this since scanimage's `--batch-prompt`
     option does not appear to work correctly with Brother's scanners. It is
     related to this [bug report](http://lists.alioth.debian.org/pipermail/sane-devel/2016-May/034587.html). 
-1.  `scantoemail.sh`. This is the standard Brother scanner utility. 
+1.  `scantoemail.sh`. This is the standard Brother scanner utility. Jan 07 2025 This script has been removed for reasons I do not recall.
 
 # TODO
 
