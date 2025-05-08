@@ -182,6 +182,8 @@ Of course, this hidden file .scantoocr-odd-filelist is a source of pain from tim
 1.  ~~Install the newest version of brscan-skey and see if it passes along information about duplex scanning.~~ There are scripts that automatically create the files. I would have to see it work, but I don't really see it working. You can only scan from the flatbed, it seems, and it only creates single files, no batch mode. I should add this to the main section of the readme. I tested the basic scripts from brother. The scantofile script is automatically generated, and it does not seem to capture the "double" sided option at all.
 
 # Notes
+May 06 2025 Added autocrop functionality to scantoimage. This is very useful for scanning photos.
+
 Jul 13 2018 Fixed the filelist function. the code is still pretty messy. Now works when run as normal user arjun. Removed chown commands.
 
 Jul 06 2018 Works on thinkpad now. 

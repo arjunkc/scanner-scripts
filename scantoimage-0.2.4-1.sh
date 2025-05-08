@@ -10,11 +10,15 @@ set +o noclobber
 #
 # query device with scanimage -h to get allowed resolutions
 # in color resolution more than 300 slows things down
-resolution=300
+resolution=600
 # leave height and width uncommented to autodetect
-#height=114
-#width=160
-compress_format="png"
+height=175
+width=175
+scan_format="pnm"
+compress="True"
+compress_format="jpg"
+compress_quality="95"
+autocrop="True"
 
 function Usage() {
     echo -e "Usage:"
@@ -55,13 +59,11 @@ else
 fi
 output_file=/home/arjun/brscan/photos/brscan_photo_"`date +%Y-%m-%d-%H-%M-%S`".pnm
 
-#echo "scan from $2($device) to $output_file"
-
 # options
 if [[ -z "$height" || -z "$width" ]]; then
-    SCANOPTIONS="--mode $mode --device-name \"$device\" --resolution $resolution"
+    SCANOPTIONS="--mode $mode --device-name \"$device\" --resolution $resolution --format $scan_format"
 else
-    SCANOPTIONS="--mode $mode --device-name \"$device\" --resolution $resolution -x $width -y $height"
+    SCANOPTIONS="--mode $mode --device-name \"$device\" --resolution $resolution -x $width -y $height --format $scan_format"
 fi
 
 # echo the command to stdout. Then write it to logfile.
@@ -82,17 +84,37 @@ if [ ! -s $output_file ];then
   scanimage $SCANOPTIONS > $output_file 2>/dev/null
 
 fi
-#echo gimp -n $output_file  2>/dev/null \;rm -f $output_file | sh & 
 
 if [ -s $output_file ]; then
     echo  $output_file is created.
     # change ownership so arjun and szhao have access
-    chown arjun:szhao $output_file
+
+    output_file_cropped=$(dirname $output_file)"/"$(basename $output_file .pnm)"-cropped.pnm"
+    if [[ "True" == "$autocrop" ]]; then
+        # maybe better to use autocrop script, which seems better for trimming dirty scanned borders
+        #echo convert -trim -fuzz 10% -bordercolor white -border 20x10 +repage "$resolution" $output_file "$output_file_cropped" | bash
+
+        # get some autotrimming information about the image 
+        image_info=$(convert $output_file -virtual-pixel edge -blur 0x20 -fuzz 25% -trim info:)
+        # compute an offset
+        off=$(echo $image_info | awk '{print $4 }' | sed -e 's/[^+]*\(+[0-9]*+[0-9]*\)/\1/') 
+        # calculate crop
+        crop=$(echo $image_info | awk '{print $3}')
+        echo "convert $output_file -crop $crop$off $output_file_cropped" >> "$logfile" 
+        # run convert command
+        if convert $output_file -crop $crop$off "$output_file_cropped"; then
+            # if the convert command converts successfully
+            #output_file="$output_file_cropped"
+            cp "$output_file_cropped" "$output_file"
+            rm "$output_file_cropped" 
+        fi
+    fi 
 
     # Should convert to jpg and delete duplicates
     output_file_compressed=$(dirname $output_file)"/"$(basename $output_file .pnm)".$compress_format"
-    echo convert -trim -bordercolor White -border 20x10 +repage -quality 95 -density "$resolution" $output_file "$output_file_compressed" 
-    echo convert -trim -quality 95 -density "$resolution" $output_file "$output_file_compressed" >> $logfile
-    echo convert -trim -quality 95 -density "$resolution" "$output_file" "$output_file_compressed" | bash
-    chown arjun:szhao $output_file_compressed
+    if [[ "True" == "$compress" ]]; then
+        echo convert -trim -quality $compress_quality -density "$resolution" $output_file "$output_file_compressed" >> $logfile
+        echo convert -trim -quality $compress_quality -density "$resolution" "$output_file" "$output_file_compressed" | bash
+        # file ownership is best set through default acl for the destination directory
+    fi
 fi

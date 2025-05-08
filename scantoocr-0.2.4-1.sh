@@ -76,7 +76,12 @@ fi
 
 # if DUPLEXSOURCE is not set
 if [[ -z $DUPLEXSOURCE ]]; then
-    DUPLEXSOURCE="Automatic Document Feeder(left aligned,Duplex)"
+    # set DUPLEXSOURCE in the config to save unnecessary queries to the device
+    get_source=$(scanimage --help -d "$device" 2>&1 | sed -n 's/^\s*--source.*|\(Automatic Document Feeder[^|]*\)|.*/\1/p')
+    if [[ -n "$get_source" ]]; then
+        # if it finds an Automatic Document Feeder option, it will pick the first one. 
+        DUPLEXSOURCE="$get_source"
+    fi
 fi
 
 # for debugging purposes, output arguments
