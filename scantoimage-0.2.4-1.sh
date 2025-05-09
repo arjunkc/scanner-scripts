@@ -98,15 +98,6 @@ else
     device=$1
 fi
 
-# OPTIONS follow
-resolution=300
-# in scantofile the width and height are automatically set. Here, they're not.
-# leave height and width uncommented to autodetect
-#height=114
-#width=160
-# set color to full color or 24 bit. 
-mode='"24Bit Color"' #other option is "Black & White"
-compress_format="png"
 
 epochnow=$(date '+%s')
 
