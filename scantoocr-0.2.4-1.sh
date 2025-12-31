@@ -91,7 +91,7 @@ echo "$*" >> ${logfile}
 set >> ${logfile}
 echo $LOGDIR >> ${logfile}
 
-fileprefix='scantoocr'
+fileprefix='scantoocr '
 echo "${basedir}/batchscan.py \
     --outputdir ${SAVETO} \
     --logdir ${LOGDIR} \

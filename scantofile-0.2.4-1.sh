@@ -109,7 +109,7 @@ set >> ${logfile}
 echo $LOGDIR >> ${logfile}
 
 # BEGIN SCAN PROCEDURE
-fileprefix='scantofile'
+fileprefix='scantofile '
 echo "${basedir}/batchscan.py \
     --outputdir ${SAVETO} \
     --logdir ${LOGDIR} \

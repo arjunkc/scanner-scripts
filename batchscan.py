@@ -160,7 +160,7 @@ if args.duplex == 'manual':
         run_mode = 'run_odd'
 
     # run scanner command
-    outputfile = args.outputdir + '/' + args.prefix + '-' + str(args.timenow) + '-part-%03d.pnm'
+    outputfile = args.outputdir + '/' + args.prefix + str(args.timenow) + '-part-%03d.pnm'
     if run_mode == 'run_odd':
         scanutils.logprint('Scanning odd pages')
 
