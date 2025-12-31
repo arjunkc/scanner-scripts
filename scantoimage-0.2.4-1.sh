@@ -17,6 +17,8 @@ compress="True"
 compress_format="jpg"
 compress_quality="95"
 autocrop="True"
+# set color to full color or 24 bit. 
+mode='"24Bit Color"' #"Black & White"'
 #   List devices with scanimage -L
 #   Query device with scanimage -h to get allowed resolutions
 #   In color, resolution more than 300 slows things down
@@ -25,8 +27,8 @@ function Usage() {
     echo -e "Usage:"
     echo -e "\t "$0" [option] <devicename>\n"
     echo -e "The devicename is optional. Set by default to ${default_device}"
-    echo -e "Check the source for options. Will write a png file in a default directory after scanning."
-    echo -e "Heights and width can be specified in the script. So can compression format, resolution."
+    echo -e "Check the source for options. Will write a $compress_format file if the compress variable is set to True. The current value is $compress. If set to False, then the scan format is $scan_format"
+    echo -e "Heights and width can be specified in the script. So can resolution."
     echo -e "\nOptions:"
     echo -e "\t -h \t Print this help"
 }
@@ -71,8 +73,9 @@ fi
 touch ${logfile}
 
 # if SOURCE is not set
+# this is currently unused in scantoimage
 if [[ -z $SOURCE ]]; then
-    SOURCE="Automatic Document Feeder(left aligned)"
+    SOURCE="FlatBed" #"Automatic Document Feeder(left aligned)"
 fi
 
 # parse one simple option. Allows you to get help
@@ -82,6 +85,7 @@ while getopts "h" opt; do
             Usage
             exit 0
             # usually there will be shift here
+            shift
             ;;
     esac
 done
@@ -151,7 +155,7 @@ if [ -s $output_file ]; then
         #echo convert -trim -fuzz 10% -bordercolor white -border 20x10 +repage "$resolution" $output_file "$output_file_cropped" | bash
 
         # get some autotrimming information about the image 
-        image_info=$(convert $output_file -virtual-pixel edge -blur 0x20 -fuzz 25% -trim info:)
+        image_info=$(convert $output_file -virtual-pixel edge -blur 0x20 -fuzz 10% -trim info:)
         # compute an offset
         off=$(echo $image_info | awk '{print $4 }' | sed -e 's/[^+]*\(+[0-9]*+[0-9]*\)/\1/') 
         # calculate crop
@@ -169,7 +173,7 @@ if [ -s $output_file ]; then
     # Should convert to jpg and delete duplicates
     output_file_compressed=$(dirname $output_file)"/"$(basename $output_file .pnm)".$compress_format"
     if [[ "True" == "$compress" ]]; then
-        echo convert -trim -quality $compress_quality -density "$resolution" $output_file "$output_file_compressed" | tee -a $logfile | bash
+        echo convert -quality $compress_quality -density "$resolution" $output_file "$output_file_compressed" | tee -a $logfile | bash
         # file ownership is best set through default acl for the destination directory
     fi
 fi
