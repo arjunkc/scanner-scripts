@@ -4,24 +4,7 @@ set +o noclobber
 #   $1 = scanner device
 #   $2 = brother internal
 #   
-#       100,200,300,400,600
-#
-# query device with scanimage -h to get allowed resolutions
-# in color resolution more than 300 slows things down
-resolution=600
-# leave height and width uncommented to autodetect
-height=175
-width=175
-scan_format="pnm"
-compress="True"
-compress_format="jpg"
-compress_quality="95"
-autocrop="True"
-# set color to full color or 24 bit. 
-mode='"24Bit Color"' #"Black & White"'
-#   List devices with scanimage -L
-#   Query device with scanimage -h to get allowed resolutions
-#   In color, resolution more than 300 slows things down
+#   This is my scantoimage. It's mostly the same as Brothers script, but it allows some more environment variables to be set using the cfg file so we don't have to edit the script directly.
 
 function Usage() {
     echo -e "Usage:"
@@ -52,6 +35,33 @@ if [[ -r "$cfgfile" ]]; then
     env
 fi
 
+#   List devices with scanimage -L
+#   Query device with scanimage -h to get allowed resolutions
+#   In color, resolution more than 300 slows things down on lower model printers 
+
+if [[ -z "$IMAGEDPI" ]]; then
+    resolution=600
+else
+    resolution="$IMAGEDPI"
+fi
+
+# height and width can be left empty to 
+# be autodetected
+if [[ -n "$IMAGEHEIGHT" ]]; then
+    height="$IMAGEHEIGHT"
+fi
+
+if [[ -n "$IMAGEWIDTH" ]]; then
+    width="$IMAGEWIDTH"
+fi
+
+scan_format="pnm"
+compress="True"
+compress_format="jpg"
+compress_quality="95"
+autocrop="True"
+# set color to full color or 24 bit. 
+mode='"24Bit Color"' #"Black & White"'
 
 # SAVETO DIRECTORY
 if [[ -z "$SAVETO" ]];  then

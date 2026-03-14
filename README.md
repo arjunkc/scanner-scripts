@@ -106,7 +106,11 @@ SAVETO       | Contains the directory scans are saved into. This is the importan
 LOGDIR       | Self explanatory
 DUPLEXTYPE   | Can take two values, manual or automatic. manual implies you have a single sided scanner,and you must scan the odd pages, and the flip it around and scan the even pages.
 SOURCE=""    | This is the paper source for the scanner. You can set this yourself by using `scanimage`. Needs sane and libsane to be installed, but you already knew that.
-DUPLEXSOURCE | This is the paper source when duplex scanning. You can set this yourself by using `scanimage` as above. 
+DUPLEXSOURCE | This is the paper source when duplex scanning. You can set this yourself by using `scanimage` as above.
+FILEDPI      | This is the dots per inch or resolution of the File. Set by default to 300.
+IMAGEDPI     | This is the dots per inch or resolution of the image. Set by default to 300.
+IMAGEHEIGHT  | This is the image height. Leave empty to autodetect. Set it if you want to scan an image with small physical dimensions at high resolutions
+IMAGEWIDTH   | This is the image width. Leave empty to autodetect.
 
 ## How it works
 

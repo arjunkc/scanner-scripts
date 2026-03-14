@@ -4,15 +4,8 @@ set +o noclobber
 #
 #   $1 = scanner device
 #   $2 = brother internal
-#   
-#       100,200,300,400,600
 #
 #   This is my batch scan. It scans single sided pages by default.
-#   List devices with scanimage -L
-#   Query device with scanimage -h to get allowed resolutions
-#   To do:
-#   ~~Apr 01 2016 To do, implement compression if possible.~~
-#   ~~Dec 31 2016 to do, combine even and odd files into one big pdf file~~
 
 function Usage() {
     echo -e "Usage:"
@@ -42,6 +35,15 @@ if [[ -r "$cfgfile" ]]; then
     env
 fi
 
+#   List devices with scanimage -L
+#   Query device with scanimage -h to get allowed resolutions
+#   In color, resolution more than 300 slows things down on lower model printers 
+
+if [[ -z "$FILEDPI" ]]; then
+    resolution=300
+else
+    resolution="$FILEDPI"
+fi
 
 # SAVETO DIRECTORY
 if [[ -z "$SAVETO" ]];  then
@@ -90,11 +92,10 @@ else
     device=$1
 fi
 
-# OPTIONS follow
-resolution=300
-# the width is default and i wont use it. It's in mm and equal to 8.5in
+# Other Options
+# the width is in mm and equal to 8.5in
 width=215.88
-# the height has to be set. its now 11in = 279.4 and 11.4in = 290. Setting the height higher does not work on the ADF, but does work on the flatbet
+# the height is 11in = 279.4 (note 11.4in = 290mm). Setting the height higher does not work on the ADF, but does work on the flatbed
 height=279.4
 # set color to Black and White by default
 mode="Black & White"
