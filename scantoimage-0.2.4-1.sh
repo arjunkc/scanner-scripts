@@ -16,7 +16,16 @@ function Usage() {
     echo -e "\t -h \t Print this help"
 }
 
-# LOGFILE
+# scan options
+scan_format="pnm"
+compress="True"
+compress_format="jpg"
+compress_quality="95"
+autocrop="True"
+#autocrop="False"
+# set color to full color or 24 bit. 
+mode='"24Bit Color"' #"Black & White"'
+
 scriptname=$(basename "$0")
 # $0 refers to the script name
 basedir=$(readlink -f "$0" | xargs dirname)
@@ -55,13 +64,6 @@ if [[ -n "$IMAGEWIDTH" ]]; then
     width="$IMAGEWIDTH"
 fi
 
-scan_format="pnm"
-compress="True"
-compress_format="jpg"
-compress_quality="95"
-autocrop="True"
-# set color to full color or 24 bit. 
-mode='"24Bit Color"' #"Black & White"'
 
 # SAVETO DIRECTORY
 if [[ -z "$SAVETO" ]];  then
@@ -165,7 +167,7 @@ if [ -s $output_file ]; then
         #echo convert -trim -fuzz 10% -bordercolor white -border 20x10 +repage "$resolution" $output_file "$output_file_cropped" | bash
 
         # get some autotrimming information about the image 
-        image_info=$(convert $output_file -virtual-pixel edge -blur 0x20 -fuzz 10% -trim info:)
+        image_info=$(convert $output_file -virtual-pixel edge -scale 10% -blur 0x20 -resize 1000% -fuzz 5% -trim info:)
         # compute an offset
         off=$(echo $image_info | awk '{print $4 }' | sed -e 's/[^+]*\(+[0-9]*+[0-9]*\)/\1/') 
         # calculate crop
