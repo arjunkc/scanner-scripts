@@ -20,7 +20,7 @@ waitlimit = 300 # a limit for waiting to fix errors
 today = datetime.date.today().isoformat() 
 
 def parse_arguments():
-    global default_outdir,default_logdir
+    global default_outdir,default_logdir,logfile
 
     # argument list
     parser = argparse.ArgumentParser(description='Process arguments for single and double sided scan')
@@ -43,6 +43,29 @@ def parse_arguments():
     parser.add_argument('--dry-run',action='store_true',default=False)
     args,unknown = parser.parse_known_args()
 
+    # first set the logfile
+    # Open logfile
+    logfile_name = args.logdir + '/batchscan.log'
+    try:
+        logfile = open(logfile_name,'a')
+        logfile.write('Opening logfile.')
+    except:
+        scanutils.logprint('Error opening or writing to logile', logfile_name)
+        try:
+            logfile = tempfile.NamedTemporaryFile(dir='/tmp',delete=False)
+            scanutils.logprint('Opened temporary logfile',logfile)
+        except:
+            scanutils.logprint('You cannot open a temporary file? You are so screwed.')
+            # set logfile to stdout
+            logfile = sys.stdout
+
+        if debug:
+            traceback.print_exc(file=sys.stdout)
+
+    scanutils.logfile = logfile
+    
+    if debug:
+        scanutils.logprint('The logfile is = ',logfile)
     # process options.
     if not args.device_name:
         if debug:
@@ -89,34 +112,12 @@ if debug:
     print('parsed arguments:',args)
 
 
-# Open logfile
-logfile_name = args.logdir + '/batchscan.log'
-try:
-    logfile = open(logfile_name,'a')
-    logfile.write('Opening logfile.')
-except:
-    scanutils.logprint('Error opening or writing to logile', logfile_name)
-    try:
-        logfile = tempfile.NamedTemporaryFile(dir='/tmp',delete=False)
-        scanutils.logprint('Opened temporary logfile',logfile)
-    except:
-        scanutils.logprint('You cannot open a temporary file? You are so screwed.')
-        # set logfile to stdout
-        logfile = sys.stdout
-
-    if debug:
-        traceback.print_exc(file=sys.stdout)
-
-scanutils.logfile = logfile
-if debug:
-    scanutils.logprint('The logfile is = ',logfile)
-
 # set filename matchstring regular expressions
-match_string_time = args.outputdir + '/' + args.prefix+'-([0-9]+)-'+part+r'-[0-9]+\..*'
-match_string_part = args.outputdir + '/' + args.prefix+'-[0-9]+-'+part+r'-([0-9]+)\..*'
+match_string_time = args.outputdir + '/' + args.prefix+'([0-9]+)-'+part+r'-[0-9]+\..*'
+match_string_part = args.outputdir + '/' + args.prefix+'[0-9]+-'+part+r'-([0-9]+)\..*'
 
 # list of odd files
-odd_files_name = args.outputdir + '/' + '.' + args.prefix + '-odd-filelist'
+odd_files_name = args.outputdir + '/' + '.' + args.prefix + 'odd-filelist'
 
 if debug:
     scanutils.logprint('Look for scanned files of the following form (regex): ', match_string_part)
@@ -205,7 +206,7 @@ if args.duplex == 'manual':
         # this section can be abstracted since it appears in both single sided and duplex mode
         try:
             dirname = args.outputdir 
-            matchregex = args.prefix + '-' + str(args.timenow) + r'-part-.*\.pnm'
+            matchregex = args.prefix + str(args.timenow) + r'-part-.*\.pnm'
             scanned_files = scanutils.filelist(dirname,matchregex)
 
             if debug:
@@ -234,7 +235,7 @@ if args.duplex == 'manual':
             # make a filelist and output filename for pdftk
             if run_mode == 'run_odd':
                 # compile the odd pages into a single pdf
-                compiled_pdf_filename = args.outputdir +  '/' + args.prefix + '-' + today + '-' + str(int(time.time())) + '-odd.pdf'
+                compiled_pdf_filename = args.outputdir +  '/' + args.prefix + today + '-' + str(int(time.time())) + '-odd.pdf'
                 filestopdftk = converted_files
 
                 # write filelist to outputdir, used in odd/even mechanism.
@@ -257,7 +258,7 @@ if args.duplex == 'manual':
                 if debug:
                     scanutils.logprint('filelist: ' , allfiles)
                 # ensures that the filename for compiled pdf is unique
-                compiled_pdf_filename = args.outputdir +  '/' + args.prefix + '-' + today + '-' + str(int(time.time())) + '.pdf'
+                compiled_pdf_filename = args.outputdir +  '/' + args.prefix + today + '-' + str(int(time.time())) + '.pdf'
                 filestopdftk = allfiles
 
                 # finally delete even files list
@@ -285,7 +286,7 @@ else: # if not (double sided and manual double scanning) simply run single sided
     scanutils.logprint('Running in single side mode or --duplex="auto"')
 
     # run scan command
-    outputfile = args.outputdir + '/' + args.prefix + '-' + str(args.timenow) + '-part-%03d.pnm'
+    outputfile = args.outputdir + '/' + args.prefix + str(args.timenow) + '-part-%03d.pnm'
     [out,err,processhandle] = scanutils.run_scancommand(\
             args.device_name,\
             outputfile,\
@@ -309,7 +310,7 @@ else: # if not (double sided and manual double scanning) simply run single sided
         # find list of scanned files.
         try:
             dirname = args.outputdir 
-            matchregex = args.prefix + '-' + str(args.timenow) + r'-part-.*\.pnm'
+            matchregex = args.prefix + str(args.timenow) + r'-part-.*\.pnm'
             scanned_files = scanutils.filelist(dirname,matchregex)
 
             if debug:
@@ -339,7 +340,7 @@ else: # if not (double sided and manual double scanning) simply run single sided
             #convertedfiles = filelist('ls ' + args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-*.pdf')
 
             # make a filelist and output filename to pdftk
-            compiled_pdf_filename = args.outputdir + '/' + args.prefix + '-' + today + '-' + str(int(time.time())) + '.pdf'
+            compiled_pdf_filename = args.outputdir + '/' + args.prefix + today + '-' + str(int(time.time())) + '.pdf'
 
             scanutils.run_pdftk(converted_files,compiled_pdf_filename,debug=debug,logfile=logfile)
 

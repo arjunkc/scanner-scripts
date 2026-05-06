@@ -97,7 +97,7 @@ def filelist(directory,regex):
     '''
     files = os.listdir(directory)
     if debug:
-        logprint('scanutils.filelist: Trying to find',regex,' in ',files)
+        logprint('scanutils.filelist: Trying to find',regex)
 
     matched_files = []
     for f in files:

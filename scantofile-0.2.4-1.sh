@@ -98,7 +98,7 @@ width=215.88
 # the height is 11in = 279.4 (note 11.4in = 290mm). Setting the height higher does not work on the ADF, but does work on the flatbed
 height=279.4
 # set color to Black and White by default
-mode="Black & White"
+mode="Black & White" #mode='24Bit Color'
 
 epochnow=$(date '+%s')
 
@@ -110,7 +110,7 @@ set >> ${logfile}
 echo $LOGDIR >> ${logfile}
 
 # BEGIN SCAN PROCEDURE
-fileprefix='scantofile '
+fileprefix='scantofile-'
 echo "${basedir}/batchscan.py \
     --outputdir ${SAVETO} \
     --logdir ${LOGDIR} \

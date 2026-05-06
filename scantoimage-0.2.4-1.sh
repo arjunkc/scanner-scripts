@@ -167,7 +167,7 @@ if [ -s $output_file ]; then
         #echo convert -trim -fuzz 10% -bordercolor white -border 20x10 +repage "$resolution" $output_file "$output_file_cropped" | bash
 
         # get some autotrimming information about the image 
-        image_info=$(convert $output_file -virtual-pixel edge -scale 10% -blur 0x20 -resize 1000% -fuzz 5% -trim info:)
+        image_info=$(convert $output_file -virtual-pixel edge -scale 25% -blur 0x5 -resize 400% -fuzz 10% -trim info:)
         # compute an offset
         off=$(echo $image_info | awk '{print $4 }' | sed -e 's/[^+]*\(+[0-9]*+[0-9]*\)/\1/') 
         # calculate crop
