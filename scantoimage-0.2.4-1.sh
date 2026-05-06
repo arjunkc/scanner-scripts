@@ -24,7 +24,7 @@ compress_quality="95"
 autocrop="True"
 #autocrop="False"
 # set color to full color or 24 bit. 
-mode='"24Bit Color"' #"Black & White"'
+mode='24Bit Color' #'Black & White'
 
 scriptname=$(basename "$0")
 # $0 refers to the script name
@@ -115,7 +115,7 @@ else
 fi
 
 
-epochnow=$(date '+%s')
+epochnow=$(date '+%Y-%m-%d-%H-%M-%S')
 
 # for debugging purposes, output arguments
 echo "options after processing." >> ${logfile}
@@ -125,67 +125,65 @@ set >> ${logfile}
 echo $LOGDIR >> ${logfile}
 
 # BEGIN SCAN PROCEDURE
-if [ "`which usleep  2>/dev/null `" != '' ];then
+if [ "`which usleep 2>/dev/null`" != '' ]; then
     usleep 100000
 else
-    sleep  0.1
+    sleep 0.1
 fi
-output_file="$SAVETO"/brscan_image_"`date +%Y-%m-%d-%H-%M-%S`".pnm
 
-# options
+batch_prefix="$SAVETO/brscan_image_${epochnow}"
+batch_pattern="${batch_prefix}-%03d.${scan_format}"
+
+# build scanimage command as array to handle arguments with spaces safely
 if [[ -z "$height" || -z "$width" ]]; then
-    SCANOPTIONS="--mode $mode --device-name \"$device\" --resolution $resolution --format $scan_format"
+    scancmd=(scanimage --batch="$batch_pattern" --mode "$mode" --device-name "$device" --resolution "$resolution" --format "$scan_format")
 else
-    SCANOPTIONS="--mode $mode --device-name \"$device\" --resolution $resolution -x $width -y $height --format $scan_format"
+    scancmd=(scanimage --batch="$batch_pattern" --mode "$mode" --device-name "$device" --resolution "$resolution" -x "$width" -y "$height" --format "$scan_format")
 fi
 
-# echo the command to stdout. Then write it to logfile.
-echo "scanimage $SCANOPTIONS > $output_file"
-echo "scanimage $SCANOPTIONS > $output_file" >> $logfile 
-echo "scanimage $SCANOPTIONS > $output_file" 2>> $logfile | bash
+echo "${scancmd[@]}" | tee -a "$logfile"
+"${scancmd[@]}" 2>> "$logfile"
 
-#scanimage --verbose $SCANOPTIONS > $output_file 2>/dev/null
+# collect batch output files
+output_files=("${batch_prefix}"-*.${scan_format})
 
-# if the file is zero size, run again.
-if [ ! -s $output_file ];then
-  if [ "`which usleep  2>/dev/null `" != '' ];then
-    usleep 1000000
-  else
-    sleep  1
-  fi
-  echo "Rerunning scanimage $SCANOPTIONS"
-  scanimage $SCANOPTIONS > $output_file 2>/dev/null
-
-fi
-
-if [ -s $output_file ]; then
-    echo  $output_file is created. | tee -a "$logfile"
-
-    output_file_cropped=$(dirname $output_file)"/"$(basename $output_file .pnm)"-cropped.pnm"
-    if [[ "True" == "$autocrop" ]]; then
-        # maybe better to use autocrop script, which seems better for trimming dirty scanned borders
-        #echo convert -trim -fuzz 10% -bordercolor white -border 20x10 +repage "$resolution" $output_file "$output_file_cropped" | bash
-
-        # get some autotrimming information about the image 
-        image_info=$(convert $output_file -virtual-pixel edge -scale 25% -blur 0x5 -resize 400% -fuzz 10% -trim info:)
-        # compute an offset
-        off=$(echo $image_info | awk '{print $4 }' | sed -e 's/[^+]*\(+[0-9]*+[0-9]*\)/\1/') 
-        # calculate crop
-        crop=$(echo $image_info | awk '{print $3}')
-        echo "convert $output_file -crop $crop$off $output_file_cropped" | tee -a "$logfile" 
-        # run convert command
-        if convert $output_file -crop $crop$off "$output_file_cropped"; then
-            # if the convert command converts successfully
-            #output_file="$output_file_cropped"
-            cp "$output_file_cropped" "$output_file"
-            rm "$output_file_cropped" 
-        fi
-    fi 
-
-    # Should convert to jpg and delete duplicates
-    output_file_compressed=$(dirname $output_file)"/"$(basename $output_file .pnm)".$compress_format"
-    if [[ "True" == "$compress" ]]; then
-        echo convert -quality $compress_quality -density "$resolution" $output_file "$output_file_compressed" | tee -a $logfile | bash
-        # file ownership is best set through default acl for the destination directory
+# retry once if no files produced
+if [ ${#output_files[@]} -eq 0 ] || [ ! -e "${output_files[0]}" ]; then
+    if [ "`which usleep 2>/dev/null`" != '' ]; then
+        usleep 1000000
+    else
+        sleep 1
     fi
+    echo "Rerunning: ${scancmd[@]}" | tee -a "$logfile"
+    "${scancmd[@]}" 2>> "$logfile"
+    output_files=("${batch_prefix}"-*.${scan_format})
 fi
+
+# process each scanned file
+for output_file in "${output_files[@]}"; do
+    [ -e "$output_file" ] || continue
+
+    if [ ! -s "$output_file" ]; then
+        echo "Skipping empty file: $output_file" | tee -a "$logfile"
+        continue
+    fi
+    echo "$output_file is created." | tee -a "$logfile"
+
+    if [[ "True" == "$autocrop" ]]; then
+        output_file_cropped="$(dirname "$output_file")/$(basename "$output_file" .${scan_format})-cropped.${scan_format}"
+        image_info=$(convert "$output_file" -virtual-pixel edge -scale 25% -blur 0x5 -resize 400% -fuzz 10% -trim info:)
+        off=$(echo "$image_info" | awk '{print $4}' | sed -e 's/[^+]*\(+[0-9]*+[0-9]*\)/\1/')
+        crop=$(echo "$image_info" | awk '{print $3}')
+        echo "convert $output_file -crop $crop$off $output_file_cropped" | tee -a "$logfile"
+        if convert "$output_file" -crop "$crop$off" "$output_file_cropped"; then
+            cp "$output_file_cropped" "$output_file"
+            rm "$output_file_cropped"
+        fi
+    fi
+
+    if [[ "True" == "$compress" ]]; then
+        output_file_compressed="$(dirname "$output_file")/$(basename "$output_file" .${scan_format}).${compress_format}"
+        echo "convert -quality $compress_quality -density $resolution $output_file $output_file_compressed" | tee -a "$logfile"
+        convert -quality "$compress_quality" -density "$resolution" "$output_file" "$output_file_compressed" 2>> "$logfile"
+    fi
+done

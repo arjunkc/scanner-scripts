@@ -41,6 +41,7 @@ def parse_arguments():
     # requires exactly one argument, but this not set by nargs
     # it's not a dry-run by default.
     parser.add_argument('--dry-run',action='store_true',default=False)
+    parser.add_argument('--compile-pdf',action=argparse.BooleanOptionalAction,default=True,help='Compile scanned pages into a single PDF using pdftk (default: True)')
     args,unknown = parser.parse_known_args()
 
     # first set the logfile
@@ -270,10 +271,11 @@ if args.duplex == 'manual':
                         traceback.print_exc(file=sys.stdout)
 
 
-            if len(filestopdftk) > 0:
-                scanutils.run_pdftk(filestopdftk,compiled_pdf_filename,debug=debug,logfile=logfile)
-            else:
-                scanutils.logprint('No files to compile')
+            if args.compile_pdf:
+                if len(filestopdftk) > 0:
+                    scanutils.run_pdftk(filestopdftk,compiled_pdf_filename,debug=debug,logfile=logfile)
+                else:
+                    scanutils.logprint('No files to compile')
 
     #close logfile
     logfile.close() 
@@ -340,9 +342,9 @@ else: # if not (double sided and manual double scanning) simply run single sided
             #convertedfiles = filelist('ls ' + args.outputdir + '/' + args.prefix + '-' + str(int(args.timenow)) + '-part-*.pdf')
 
             # make a filelist and output filename to pdftk
-            compiled_pdf_filename = args.outputdir + '/' + args.prefix + today + '-' + str(int(time.time())) + '.pdf'
-
-            scanutils.run_pdftk(converted_files,compiled_pdf_filename,debug=debug,logfile=logfile)
+            if args.compile_pdf:
+                compiled_pdf_filename = args.outputdir + '/' + args.prefix + today + '-' + str(int(time.time())) + '.pdf'
+                scanutils.run_pdftk(converted_files,compiled_pdf_filename,debug=debug,logfile=logfile)
 
         else:
             scanutils.logprint('No scanned files found')
